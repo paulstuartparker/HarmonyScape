@@ -61,17 +61,15 @@ juce::MidiBuffer ChordEngine::processMidi(const juce::MidiBuffer& midiMessages, 
     }
     
     // Now handle note-offs intelligently
-    if (notesOff.size() > 0)
+    if (notesOff.size() > 0 || activeNotes.size() == 0)
     {
-        // Only turn off notes that are NOT in the new voicing
+        // Turn off ALL current voicing notes if user released any note or no notes are active
         for (int voiceNote : currentVoicing)
         {
-            if (!newVoicing.contains(voiceNote))
-            {
-                // This note is no longer needed, turn it off
-                outputBuffer.addEvent(juce::MidiMessage::noteOff(1, voiceNote, 0.0f), 0);
-            }
+            // This note is no longer needed, turn it off
+            outputBuffer.addEvent(juce::MidiMessage::noteOff(1, voiceNote, 0.0f), 0);
         }
+        currentVoicing.clear();
     }
     
     // Now send note-ons for truly new notes
@@ -80,8 +78,8 @@ juce::MidiBuffer ChordEngine::processMidi(const juce::MidiBuffer& midiMessages, 
         int newNote = newVoicing[i];
         if (!currentVoicing.contains(newNote))
         {
-            // Turn on new notes in the voicing
-            outputBuffer.addEvent(juce::MidiMessage::noteOn(1, newNote, 0.8f), 0);
+            // Turn on new notes in the voicing with reduced velocity for generated notes
+            outputBuffer.addEvent(juce::MidiMessage::noteOn(1, newNote, 0.6f), 0);
         }
     }
     

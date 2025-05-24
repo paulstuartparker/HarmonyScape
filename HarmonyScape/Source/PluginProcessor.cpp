@@ -149,24 +149,11 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Clear output buffer
     buffer.clear();
     
-    // Update user input notes tracking for visualization
-    userInputNotes.clearQuick();
-    for (const auto metadata : midiMessages)
-    {
-        auto message = metadata.getMessage();
-        
-        if (message.isNoteOn())
-        {
-            userInputNotes.addIfNotAlreadyThere(message.getNoteNumber());
-        }
-        else if (message.isNoteOff())
-        {
-            userInputNotes.removeFirstMatchingValue(message.getNoteNumber());
-        }
-    }
-    
     // Process MIDI messages through chord engine
     auto chordOutput = chordEngine.processMidi(midiMessages, *chordDensityParam);
+    
+    // Store the chord output in the spatial engine for visualization
+    spatialEngine.setChordOutput(chordOutput);
     
     // Combine user input MIDI with generated chord output
     // This ensures both original notes and harmony are rendered together
@@ -182,22 +169,6 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (const auto metadata : chordOutput)
     {
         combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
-    }
-    
-    // Update generated notes tracking for visualization
-    generatedOutputNotes.clearQuick();
-    for (const auto metadata : chordOutput)
-    {
-        auto message = metadata.getMessage();
-        
-        if (message.isNoteOn())
-        {
-            generatedOutputNotes.addIfNotAlreadyThere(message.getNoteNumber());
-        }
-        else if (message.isNoteOff())
-        {
-            generatedOutputNotes.removeFirstMatchingValue(message.getNoteNumber());
-        }
     }
     
     // Convert waveform parameter to enum
@@ -257,12 +228,14 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 // Add these methods for keyboard visualization
 juce::Array<int> HarmonyScapeAudioProcessor::getUserInputNotes() const
 {
-    return userInputNotes;
+    // Use the spatial engine's tracking
+    return spatialEngine.getUserInputNotes();
 }
 
 juce::Array<int> HarmonyScapeAudioProcessor::getGeneratedNotes() const
 {
-    return generatedOutputNotes;
+    // Use the spatial engine's tracking
+    return spatialEngine.getGeneratedNotes();
 }
 
 // Get notes in release phase that are still sounding
@@ -280,7 +253,7 @@ void HarmonyScapeAudioProcessor::updateActiveVoices(const juce::Array<int>& acti
     // For each active voice, check if it's a releasing note (not in userInputNotes or generatedOutputNotes)
     for (const auto& noteNumber : activeVoiceNotes)
     {
-        if (!userInputNotes.contains(noteNumber) && !generatedOutputNotes.contains(noteNumber))
+        if (!spatialEngine.getUserInputNotes().contains(noteNumber) && !spatialEngine.getGeneratedNotes().contains(noteNumber))
         {
             releasingNotes.addIfNotAlreadyThere(noteNumber);
         }

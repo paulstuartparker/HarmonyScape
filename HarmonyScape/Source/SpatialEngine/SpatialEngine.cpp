@@ -39,6 +39,10 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
     // Track which notes have been stopped in this block
     juce::Array<int> stoppedNotes;
     
+    // CRITICAL FIX: Clear the arrays at the start of each process block
+    userInputNotes.clearQuick();
+    generatedNotes.clearQuick();
+    
     // First pass - collect all note-on and note-off messages
     for (const auto metadata : midiBuffer)
     {
@@ -48,19 +52,30 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
         {
             int noteNumber = message.getNoteNumber();
             activeNotes.addIfNotAlreadyThere(noteNumber);
+            
+            // CRITICAL: Track user input notes
+            userInputNotes.addIfNotAlreadyThere(noteNumber);
+            
+            // CRITICAL FIX: Ensure voice is properly activated
+            for (auto& voice : voices)
+            {
+                if (voice.midiNote == noteNumber)
+                {
+                    voice.active = true;
+                    voice.envelopeState = Voice::EnvelopeState::Attack;
+                    voice.envelopeLevel = 0.0f;
+                    break;
+                }
+            }
         }
-        else if (message.isNoteOff() || (message.isNoteOn() && message.getVelocity() == 0)) // Handle both note-off and note-on with 0 velocity
+        else if (message.isNoteOff() || (message.isNoteOn() && message.getVelocity() == 0))
         {
             int noteNumber = message.getNoteNumber();
             stoppedNotes.add(noteNumber);
-            // Also remove from active notes if it's there
             activeNotes.removeFirstMatchingValue(noteNumber);
+            userInputNotes.removeFirstMatchingValue(noteNumber);
         }
     }
-    
-    // Explicitly mark user input notes for keyboard display
-    userInputNotes.clearQuick();
-    userInputNotes.addArray(activeNotes);
     
     // Sort active notes to determine chord structure
     activeNotes.sort();
@@ -85,7 +100,9 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
                     voice.trigger(noteNumber, 
                                  calculatePosition(noteNumber, chordPosition, spatialWidth),
                                  chordPosition);
-                    voice.envelopeLevel = 0.0f; // FIX: Start at 0 instead of 0.01f for proper attack
+                    voice.envelopeLevel = 0.0f;
+                    voice.active = true;
+                    voice.envelopeState = Voice::EnvelopeState::Attack;
                     noteAssigned = true;
                     break;
                 }
@@ -96,14 +113,16 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
             {
                 for (auto& voice : voices)
                 {
-                    if (!voice.active && voice.envelopeState == Voice::EnvelopeState::Release && voice.envelopeLevel < 0.01f)
+                    if (!voice.active && voice.envelopeState == Voice::EnvelopeState::Release && voice.envelopeLevel < 0.1f)
                     {
                         int noteNumber = message.getNoteNumber();
                         int chordPosition = activeNotes.indexOf(noteNumber);
                         voice.trigger(noteNumber, 
                                      calculatePosition(noteNumber, chordPosition, spatialWidth),
                                      chordPosition);
-                        voice.envelopeLevel = 0.0f; // FIX: Start at 0 instead of 0.01f
+                        voice.envelopeLevel = 0.0f;
+                        voice.active = true;
+                        voice.envelopeState = Voice::EnvelopeState::Attack;
                         noteAssigned = true;
                         break;
                     }
@@ -133,26 +152,25 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
                     voices[static_cast<size_t>(oldestIndex)].trigger(noteNumber, 
                                               calculatePosition(noteNumber, chordPosition, spatialWidth),
                                               chordPosition);
-                    voices[static_cast<size_t>(oldestIndex)].envelopeLevel = 0.0f; // FIX: Start at 0 instead of 0.01f
+                    voices[static_cast<size_t>(oldestIndex)].envelopeLevel = 0.0f;
+                    voices[static_cast<size_t>(oldestIndex)].active = true;
+                    voices[static_cast<size_t>(oldestIndex)].envelopeState = Voice::EnvelopeState::Attack;
                 }
             }
         }
     }
     
-    // Third pass - CRITICAL: Process note-off messages - force transition to release
+    // Third pass - process note-off messages
     for (int i = 0; i < stoppedNotes.size(); ++i)
     {
         int noteNumber = stoppedNotes[i];
         
-        // Release any matching voices - ensure release is triggered for ALL matching voices
+        // Release any matching voices
         for (auto& voice : voices)
         {
             if (voice.midiNote == noteNumber && voice.envelopeState != Voice::EnvelopeState::Idle)
             {
-                // CRITICAL: Force transition to release phase immediately
                 voice.active = false;
-                
-                // Only transition if not already in release
                 if (voice.envelopeState != Voice::EnvelopeState::Release)
                 {
                     voice.envelopeState = Voice::EnvelopeState::Release;
@@ -175,20 +193,11 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
         }
     }
     
-    // Safety check - stop notes that have been playing too long
-    for (auto& voice : voices)
-    {
-        if (voice.active && voice.hasTimedOut(currentTime))
-        {
-            voice.forceStop();
-        }
-    }
-    
     // Calculate active voice count for volume scaling
     int activeVoiceCount = 0;
     for (const auto& voice : voices)
     {
-        if (voice.active || (voice.envelopeState != Voice::EnvelopeState::Idle && voice.envelopeLevel > 0.01f))
+        if (voice.active || (voice.envelopeState != Voice::EnvelopeState::Idle && voice.envelopeLevel > 0.001f))
         {
             activeVoiceCount++;
         }
@@ -199,23 +208,17 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
     
     for (auto& voice : voices)
     {
-        if (voice.active || (voice.envelopeState != Voice::EnvelopeState::Idle && voice.envelopeLevel > 0.0f))
+        // CRITICAL FIX: Only skip rendering if voice is completely idle
+        if (voice.envelopeState != Voice::EnvelopeState::Idle)
         {
             // Apply volume scaling based on number of active voices to prevent clipping
             float voiceVolume = masterVolume;
             if (activeVoiceCount > 0 && activeVoiceCount > 1)
             {
-                // Scale by square root of voice count for a more natural sound
                 voiceVolume = masterVolume / std::sqrt(static_cast<float>(activeVoiceCount));
             }
             
             renderVoice(voice, buffer, 0, numSamples, waveformType, voiceVolume, adsr);
-        }
-        else
-        {
-            // Make sure silent voices are properly reset
-            voice.envelopeState = Voice::EnvelopeState::Idle;
-            voice.envelopeLevel = 0.0f;
         }
     }
 }
@@ -229,7 +232,7 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
             if (adsr.attack > 0.0f)
                 envelopeIncrement = 1.0f / (adsr.attack * static_cast<float>(sampleRate));
             else
-                envelopeIncrement = 1.0f / (0.001f * static_cast<float>(sampleRate));
+                envelopeIncrement = 1.0f;
             
             if (voice.envelopeLevel >= 1.0f)
             {
@@ -256,7 +259,6 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
             envelopeIncrement = 0.0f;
             voice.envelopeLevel = adsr.sustain;
             
-            // CRITICAL: Immediately transition to release when note is released
             if (!voice.active)
             {
                 voice.envelopeState = Voice::EnvelopeState::Release;
@@ -266,17 +268,15 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
         case Voice::EnvelopeState::Release:
             if (adsr.release > 0.001f)
             {
-                // Smooth release calculation
-                float releaseRate = voice.envelopeLevel / (adsr.release * static_cast<float>(sampleRate));
-                envelopeIncrement = -std::max(0.0001f, releaseRate); // Ensure minimum release rate
+                // Fixed release calculation - constant rate based on release time
+                envelopeIncrement = -1.0f / (adsr.release * static_cast<float>(sampleRate));
             }
             else
             {
-                envelopeIncrement = -0.01f; // Fast release for very short release times
+                envelopeIncrement = -1.0f; // Immediate release
             }
             
-            // Transition to idle when envelope reaches zero
-            if (voice.envelopeLevel <= 0.001f)
+            if (voice.envelopeLevel <= 0.0f)
             {
                 voice.envelopeLevel = 0.0f;
                 voice.envelopeState = Voice::EnvelopeState::Idle;
@@ -318,20 +318,19 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
     
     // Add subtle pitch modulation for liveliness
     float lfoPhase = std::fmod(voice.noteStartTime * 0.001f + voice.chordPosition * 0.3f, 1.0f);
-    float pitchModAmount = 0.002f + (voice.chordPosition * 0.001f); // More modulation for higher chord tones
+    float pitchModAmount = 0.002f + (voice.chordPosition * 0.001f);
     
     // Calculate stereo position (pan)
     float leftGain = std::sqrt(0.5f - voice.position * 0.5f);
     float rightGain = std::sqrt(0.5f + voice.position * 0.5f);
     
     // Dynamic filter cutoff based on envelope and note pitch
-    // Higher cutoff for brighter sound, especially in low notes
-    float baseCutoff = 0.4f + (voice.midiNote / 127.0f) * 0.4f; // Brighter overall
+    float baseCutoff = 0.4f + (voice.midiNote / 127.0f) * 0.4f;
     
     // High-pass filter frequency to reduce muddiness
-    float highpassFreq = 80.0f; // 80Hz high-pass
-    if (voice.midiNote < 48) // For low notes
-        highpassFreq = 120.0f; // More aggressive high-pass
+    float highpassFreq = 80.0f;
+    if (voice.midiNote < 48)
+        highpassFreq = 120.0f;
     
     // Calculate high-pass filter coefficient
     float highpassCutoff = highpassFreq / static_cast<float>(sampleRate);
@@ -348,13 +347,21 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
         voice.envelopeLevel += envelopeIncrement;
         
         // Clamp envelope level to valid range
-        if (voice.envelopeLevel > 1.0f)
-            voice.envelopeLevel = 1.0f;
-        else if (voice.envelopeLevel < 0.0f)
-            voice.envelopeLevel = 0.0f;
+        voice.envelopeLevel = juce::jlimit(0.0f, 1.0f, voice.envelopeLevel);
+        
+        // Skip rendering if envelope is too low
+        if (voice.envelopeLevel < 0.001f)
+        {
+            if (voice.envelopeState == Voice::EnvelopeState::Release)
+            {
+                voice.envelopeState = Voice::EnvelopeState::Idle;
+                voice.active = false;
+            }
+            continue;
+        }
         
         // Apply subtle pitch modulation (vibrato)
-        lfoPhase += 0.0001f; // ~4.4Hz at 44.1kHz
+        lfoPhase += 0.0001f;
         if (lfoPhase > 1.0f) lfoPhase -= 1.0f;
         float pitchMod = 1.0f + std::sin(lfoPhase * 2.0f * juce::MathConstants<float>::pi) * pitchModAmount;
         float frequency = baseFrequency * pitchMod;
@@ -366,10 +373,10 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
         float sample = generateSample(voice.phase, waveformType) * voice.envelopeLevel * masterVolume;
         
         // Dynamic filter that opens with envelope (low-pass)
-        float dynamicCutoff = baseCutoff + (voice.envelopeLevel * 0.2f); // Less envelope modulation
+        float dynamicCutoff = baseCutoff + (voice.envelopeLevel * 0.2f);
         
         // Resonant low-pass filter for character
-        float resonance = 0.3f + (voice.chordPosition * 0.05f); // Less resonance for cleaner sound
+        float resonance = 0.3f + (voice.chordPosition * 0.05f);
         
         // Simple resonant filter implementation
         voice.filterState = voice.filterState * dynamicCutoff + sample * (1.0f - dynamicCutoff);
@@ -379,32 +386,17 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
         voice.highpassState += (filteredSample - voice.highpassState) * highpassCoeff;
         filteredSample = filteredSample - voice.highpassState;
         
-        // Soft saturation for warmth (less aggressive)
+        // Soft saturation for warmth
         filteredSample = std::tanh(filteredSample * 0.8f) * 0.95f;
         
-        // Apply stereo positioning with subtle movement
-        float panLfo = std::sin((lfoPhase * 0.3f + voice.chordPosition * 0.2f) * 2.0f * juce::MathConstants<float>::pi);
-        float dynamicPan = voice.position + (panLfo * 0.05f); // Subtle stereo movement
-        dynamicPan = juce::jlimit(-1.0f, 1.0f, dynamicPan);
+        // Write to stereo output with panning
+        leftBuffer[i] += filteredSample * leftGain;
+        rightBuffer[i] += filteredSample * rightGain;
         
-        float currentLeftGain = std::sqrt(0.5f - dynamicPan * 0.5f);
-        float currentRightGain = std::sqrt(0.5f + dynamicPan * 0.5f);
-        
-        leftBuffer[i] += filteredSample * currentLeftGain;
-        rightBuffer[i] += filteredSample * currentRightGain;
-        
-        // Increment phase
+        // Update phase for next sample
         voice.phase += phaseIncrement;
-        if (voice.phase >= 1.0f)
+        if (voice.phase > 1.0f)
             voice.phase -= 1.0f;
-    }
-    
-    // After rendering, check if we should transition to idle
-    if (voice.envelopeLevel <= 0.001f && voice.envelopeState == Voice::EnvelopeState::Release)
-    {
-        voice.envelopeLevel = 0.0f;
-        voice.envelopeState = Voice::EnvelopeState::Idle;
-        voice.active = false;
     }
 }
 

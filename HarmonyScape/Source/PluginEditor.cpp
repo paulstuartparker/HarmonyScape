@@ -239,9 +239,16 @@ void HarmonyScapeAudioProcessorEditor::resized()
 
 void HarmonyScapeAudioProcessorEditor::timerCallback()
 {
-    // Update the keyboard with only the current active notes
-    customKeyboard.setUserNotes(audioProcessor.getUserInputNotes());
-    customKeyboard.setGeneratedNotes(audioProcessor.getGeneratedNotes());
+    // Clamp notes to visible keyboard range
+    auto clampNotes = [](const juce::Array<int>& notes) {
+        juce::Array<int> clamped;
+        for (auto n : notes) {
+            if (n >= 36 && n <= 96) clamped.add(n);
+        }
+        return clamped;
+    };
+    customKeyboard.setUserNotes(clampNotes(audioProcessor.getUserInputNotes()));
+    customKeyboard.setGeneratedNotes(clampNotes(audioProcessor.getGeneratedNotes()));
     
     // Update ADSR visualizer
     float attack = *valueTreeState.getRawParameterValue("attack");
