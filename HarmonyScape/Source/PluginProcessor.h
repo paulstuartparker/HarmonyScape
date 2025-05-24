@@ -98,40 +98,25 @@ public:
         params.push_back(std::make_unique<juce::AudioParameterBool>(
             "enableMovement", "Enable Movement", true));
 
-        // Ribbon parameters
+        // Master Ribbon Controls (replaces individual ribbon controls)
         params.push_back(std::make_unique<juce::AudioParameterBool>(
             "enableRibbons", "Enable Ribbons", true));
         params.push_back(std::make_unique<juce::AudioParameterInt>(
-            "ribbonCount", "Ribbon Count", 1, 5, 2));
+            "ribbonCount", "Ribbon Count", 1, 5, 3));
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
-            "ribbonRate", "Ribbon Rate", 0.0f, 1.0f, 0.5f));
+            "pulse", "Pulse", 0.0f, 1.0f, 0.5f));
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
-            "ribbonSpread", "Ribbon Spread", 0.0f, 1.0f, 0.6f));
+            "variation", "Variation", 0.0f, 1.0f, 0.5f));
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
-            "ribbonIntensity", "Ribbon Intensity", 0.0f, 1.0f, 0.8f));
-        
-        // Individual ribbon controls (for first 3 ribbons in basic UI)
-        for (int i = 0; i < 3; ++i)
-        {
-            juce::String prefix = "ribbon" + juce::String(i + 1);
-            params.push_back(std::make_unique<juce::AudioParameterBool>(
-                prefix + "Enable", "Ribbon " + juce::String(i + 1) + " Enable", i < 2));
-            params.push_back(std::make_unique<juce::AudioParameterChoice>(
-                prefix + "Pattern", "Ribbon " + juce::String(i + 1) + " Pattern",
-                juce::StringArray("Up", "Down", "Outside", "Inside", "Random", "Cascade", "Spiral"), i % 7));
-            params.push_back(std::make_unique<juce::AudioParameterFloat>(
-                prefix + "Rate", "Ribbon " + juce::String(i + 1) + " Rate", 0.0f, 1.0f, 0.5f + i * 0.1f));
-            params.push_back(std::make_unique<juce::AudioParameterFloat>(
-                prefix + "Offset", "Ribbon " + juce::String(i + 1) + " Offset", 0.0f, 1.0f, i * 0.33f));
-        }
-
-        // Legacy rhythmic parameters (keep for backward compatibility)
+            "wobble", "Wobble", 0.0f, 1.0f, 0.3f));
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
             "swing", "Swing", 0.0f, 1.0f, 0.0f));
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
-            "groove", "Groove", 0.0f, 1.0f, 0.0f));
+            "shimmer", "Shimmer", 0.0f, 1.0f, 0.2f));
+
+        // Legacy rhythmic parameters (keep for backward compatibility)
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
-            "shimmer", "Shimmer", 0.0f, 1.0f, 0.0f));
+            "groove", "Groove", 0.0f, 1.0f, 0.0f));
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
             "shimmerRate", "Shimmer Rate", 0.0f, 1.0f, 0.5f));
         params.push_back(std::make_unique<juce::AudioParameterBool>(
@@ -168,27 +153,17 @@ private:
     std::atomic<float>* depthParam = nullptr;
     std::atomic<float>* enableMovementParam = nullptr;
     
-    // Ribbon parameters
+    // Master Ribbon parameters
     std::atomic<float>* enableRibbonsParam = nullptr;
     std::atomic<float>* ribbonCountParam = nullptr;
-    std::atomic<float>* ribbonRateParam = nullptr;
-    std::atomic<float>* ribbonSpreadParam = nullptr;
-    std::atomic<float>* ribbonIntensityParam = nullptr;
-    
-    // Individual ribbon parameters (first 3 ribbons)
-    struct RibbonParamSet
-    {
-        std::atomic<float>* enable = nullptr;
-        std::atomic<float>* pattern = nullptr;
-        std::atomic<float>* rate = nullptr;
-        std::atomic<float>* offset = nullptr;
-    };
-    std::array<RibbonParamSet, 3> ribbonParams;
-    
-    // Legacy rhythmic parameters
+    std::atomic<float>* pulseParam = nullptr;
+    std::atomic<float>* variationParam = nullptr;
+    std::atomic<float>* wobbleParam = nullptr;
     std::atomic<float>* swingParam = nullptr;
-    std::atomic<float>* grooveParam = nullptr;
     std::atomic<float>* shimmerParam = nullptr;
+    
+    // Legacy rhythmic parameters (minimal set)
+    std::atomic<float>* grooveParam = nullptr;
     std::atomic<float>* shimmerRateParam = nullptr;
     std::atomic<float>* enableRhythmParam = nullptr;
     

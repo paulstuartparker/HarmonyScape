@@ -107,98 +107,57 @@ void HarmonyScapeAudioProcessorEditor::setupRibbonControls()
     auto setupLabel = [this](juce::Label& label, const juce::String& text) {
         label.setText(text, juce::dontSendNotification);
         label.setJustificationType(juce::Justification::centred);
-        label.setFont(10.0f);
+        label.setFont(11.0f);
         addAndMakeVisible(label);
     };
     
-    auto setupRotaryKnob = [this](juce::Slider& slider) {
+    auto setupMasterKnob = [this](juce::Slider& slider, juce::Colour color) {
         slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 16);
-        slider.setColour(juce::Slider::thumbColourId, juce::Colours::cyan);
-        slider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::cyan.withAlpha(0.7f));
+        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 18);
+        slider.setColour(juce::Slider::thumbColourId, color);
+        slider.setColour(juce::Slider::rotarySliderFillColourId, color.withAlpha(0.7f));
+        slider.setRange(0.0, 1.0, 0.01);
         addAndMakeVisible(slider);
     };
     
-    // Main ribbon controls
-    addAndMakeVisible(enableRibbonsButton);
-    enableRibbonsButton.setButtonText("Enable Ribbons");
-    enableRibbonsButton.setToggleState(true, juce::dontSendNotification);
-    
+    // Header
     addAndMakeVisible(ribbonsHeaderLabel);
     ribbonsHeaderLabel.setText("RHYTHMIC RIBBONS", juce::dontSendNotification);
-    ribbonsHeaderLabel.setFont(juce::Font(14.0f, juce::Font::bold));
+    ribbonsHeaderLabel.setFont(juce::Font(16.0f, juce::Font::bold));
     ribbonsHeaderLabel.setColour(juce::Label::textColourId, juce::Colours::cyan);
     ribbonsHeaderLabel.setJustificationType(juce::Justification::centred);
     
-    // Global ribbon controls
-    setupRotaryKnob(ribbonCountSlider);
+    // Enable and count controls
+    addAndMakeVisible(enableRibbonsButton);
+    enableRibbonsButton.setButtonText("Enable Ribbons");
+    enableRibbonsButton.setToggleState(true, juce::dontSendNotification);
+    enableRibbonsButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::cyan);
+    
+    setupMasterKnob(ribbonCountSlider, juce::Colours::cyan);
     ribbonCountSlider.setRange(1, 5, 1);
-    ribbonCountSlider.setValue(2);
+    ribbonCountSlider.setValue(3);
     setupLabel(ribbonCountLabel, "Count");
     
-    setupRotaryKnob(ribbonRateSlider);
-    ribbonRateSlider.setRange(0.0, 1.0, 0.01);
-    ribbonRateSlider.setValue(0.5);
-    setupLabel(ribbonRateLabel, "Rate");
+    // MASTER CONTROLS - These are the magic! 🎵
+    setupMasterKnob(pulseSlider, juce::Colours::orange);
+    pulseSlider.setValue(0.5);
+    setupLabel(pulseLabel, "Pulse");
     
-    setupRotaryKnob(ribbonSpreadSlider);
-    ribbonSpreadSlider.setRange(0.0, 1.0, 0.01);
-    ribbonSpreadSlider.setValue(0.6);
-    setupLabel(ribbonSpreadLabel, "Spread");
+    setupMasterKnob(variationSlider, juce::Colours::yellow);
+    variationSlider.setValue(0.5);
+    setupLabel(variationLabel, "Variation");
     
-    setupRotaryKnob(ribbonIntensitySlider);
-    ribbonIntensitySlider.setRange(0.0, 1.0, 0.01);
-    ribbonIntensitySlider.setValue(0.8);
-    setupLabel(ribbonIntensityLabel, "Intensity");
+    setupMasterKnob(wobbleSlider, juce::Colours::lime);
+    wobbleSlider.setValue(0.3);
+    setupLabel(wobbleLabel, "Wobble");
     
-    // Individual ribbon controls
-    for (int i = 0; i < 3; ++i)
-    {
-        auto& ribbon = ribbonControls[i];
-        
-        // Enable button
-        addAndMakeVisible(ribbon.enableButton);
-        ribbon.enableButton.setButtonText("R" + juce::String(i + 1));
-        ribbon.enableButton.setToggleState(i < 2, juce::dontSendNotification);
-        
-        // Pattern combo
-        addAndMakeVisible(ribbon.patternCombo);
-        ribbon.patternCombo.addItem("Up", 1);
-        ribbon.patternCombo.addItem("Down", 2);
-        ribbon.patternCombo.addItem("Outside", 3);
-        ribbon.patternCombo.addItem("Inside", 4);
-        ribbon.patternCombo.addItem("Random", 5);
-        ribbon.patternCombo.addItem("Cascade", 6);
-        ribbon.patternCombo.addItem("Spiral", 7);
-        ribbon.patternCombo.setSelectedId((i % 7) + 1);
-        
-        // Rate knob (changed from linear slider to rotary knob)
-        addAndMakeVisible(ribbon.rateSlider);
-        ribbon.rateSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-        ribbon.rateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 14);
-        ribbon.rateSlider.setColour(juce::Slider::thumbColourId, juce::Colours::orange);
-        ribbon.rateSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::orange.withAlpha(0.7f));
-        ribbon.rateSlider.setRange(0.0, 1.0, 0.01);
-        ribbon.rateSlider.setValue(0.5 + i * 0.1);
-        
-        // Offset knob (changed from linear slider to rotary knob)
-        addAndMakeVisible(ribbon.offsetSlider);
-        ribbon.offsetSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-        ribbon.offsetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 14);
-        ribbon.offsetSlider.setColour(juce::Slider::thumbColourId, juce::Colours::orange);
-        ribbon.offsetSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::orange.withAlpha(0.7f));
-        ribbon.offsetSlider.setRange(0.0, 1.0, 0.01);
-        ribbon.offsetSlider.setValue(i * 0.33);
-        
-        // Labels
-        setupLabel(ribbon.titleLabel, "Ribbon " + juce::String(i + 1));
-        ribbon.titleLabel.setFont(juce::Font(11.0f, juce::Font::bold));
-        ribbon.titleLabel.setColour(juce::Label::textColourId, juce::Colours::orange);
-        
-        setupLabel(ribbon.patternLabel, "Pattern");
-        setupLabel(ribbon.rateLabel, "Rate");
-        setupLabel(ribbon.offsetLabel, "Offset");
-    }
+    setupMasterKnob(swingSlider, juce::Colours::magenta);
+    swingSlider.setValue(0.0);
+    setupLabel(swingLabel, "Swing");
+    
+    setupMasterKnob(shimmerSlider, juce::Colours::lightblue);
+    shimmerSlider.setValue(0.2);
+    setupLabel(shimmerLabel, "Shimmer");
 }
 
 void HarmonyScapeAudioProcessorEditor::setupSpatialControls()
@@ -268,19 +227,11 @@ void HarmonyScapeAudioProcessorEditor::createParameterAttachments()
     // Ribbon attachments
     enableRibbonsAttachment.reset(new juce::AudioProcessorValueTreeState::ButtonAttachment(valueTreeState, "enableRibbons", enableRibbonsButton));
     ribbonCountAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, "ribbonCount", ribbonCountSlider));
-    ribbonRateAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, "ribbonRate", ribbonRateSlider));
-    ribbonSpreadAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, "ribbonSpread", ribbonSpreadSlider));
-    ribbonIntensityAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, "ribbonIntensity", ribbonIntensitySlider));
-    
-    // Individual ribbon attachments
-    for (int i = 0; i < 3; ++i)
-    {
-        juce::String prefix = "ribbon" + juce::String(i + 1);
-        ribbonAttachments[i].enableAttachment.reset(new juce::AudioProcessorValueTreeState::ButtonAttachment(valueTreeState, prefix + "Enable", ribbonControls[i].enableButton));
-        ribbonAttachments[i].patternAttachment.reset(new juce::AudioProcessorValueTreeState::ComboBoxAttachment(valueTreeState, prefix + "Pattern", ribbonControls[i].patternCombo));
-        ribbonAttachments[i].rateAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, prefix + "Rate", ribbonControls[i].rateSlider));
-        ribbonAttachments[i].offsetAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, prefix + "Offset", ribbonControls[i].offsetSlider));
-    }
+    pulseAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, "pulse", pulseSlider));
+    variationAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, "variation", variationSlider));
+    wobbleAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, "wobble", wobbleSlider));
+    swingAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, "swing", swingSlider));
+    shimmerAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(valueTreeState, "shimmer", shimmerSlider));
     
     // Enhanced spatial attachments
     enableMovementAttachment.reset(new juce::AudioProcessorValueTreeState::ButtonAttachment(valueTreeState, "enableMovement", enableMovementButton));
@@ -438,69 +389,50 @@ void HarmonyScapeAudioProcessorEditor::resized()
 
 void HarmonyScapeAudioProcessorEditor::layoutRibbonControls()
 {
-    juce::Rectangle<int> ribbonSection(600, 75, 280, 330);
+    juce::Rectangle<int> ribbonSection(600, 75, 300, 330);
     
     // Header
     ribbonsHeaderLabel.setBounds(ribbonSection.removeFromTop(25));
-    ribbonSection.removeFromTop(5);
+    ribbonSection.removeFromTop(10);
     
     // Enable button
     enableRibbonsButton.setBounds(ribbonSection.removeFromTop(25).reduced(40, 0));
-    ribbonSection.removeFromTop(5);
+    ribbonSection.removeFromTop(10);
     
-    // Global controls in 2x2 grid - made larger for knobs
-    auto globalArea = ribbonSection.removeFromTop(140);
-    auto topRow = globalArea.removeFromTop(70);
-    auto bottomRow = globalArea;
+    // Count control (centered)
+    auto countArea = ribbonSection.removeFromTop(80);
+    auto countCenter = countArea.withSizeKeepingCentre(70, 80);
+    ribbonCountLabel.setBounds(countCenter.removeFromBottom(15));
+    ribbonCountSlider.setBounds(countCenter);
     
-    // Top row - increased width for knobs
-    auto countArea = topRow.removeFromLeft(70);
-    ribbonCountLabel.setBounds(countArea.removeFromBottom(15));
-    ribbonCountSlider.setBounds(countArea);
+    ribbonSection.removeFromTop(10);
     
-    auto rateArea = topRow.removeFromLeft(70);
-    ribbonRateLabel.setBounds(rateArea.removeFromBottom(15));
-    ribbonRateSlider.setBounds(rateArea);
+    // Master controls in 3x2 grid
+    auto masterArea = ribbonSection.removeFromTop(170);
+    auto topRow = masterArea.removeFromTop(85);
+    auto bottomRow = masterArea;
     
-    // Bottom row
-    auto spreadArea = bottomRow.removeFromLeft(70);
-    ribbonSpreadLabel.setBounds(spreadArea.removeFromBottom(15));
-    ribbonSpreadSlider.setBounds(spreadArea);
+    // Top row: Pulse, Variation, Wobble  
+    auto pulseArea = topRow.removeFromLeft(90);
+    pulseLabel.setBounds(pulseArea.removeFromBottom(15));
+    pulseSlider.setBounds(pulseArea);
     
-    auto intensityArea = bottomRow.removeFromLeft(70);
-    ribbonIntensityLabel.setBounds(intensityArea.removeFromBottom(15));
-    ribbonIntensitySlider.setBounds(intensityArea);
+    auto variationArea = topRow.removeFromLeft(90);
+    variationLabel.setBounds(variationArea.removeFromBottom(15));
+    variationSlider.setBounds(variationArea);
     
-    ribbonSection.removeFromTop(5);
+    auto wobbleArea = topRow.removeFromLeft(90);
+    wobbleLabel.setBounds(wobbleArea.removeFromBottom(15));
+    wobbleSlider.setBounds(wobbleArea);
     
-    // Individual ribbon controls - made larger for knobs
-    for (int i = 0; i < 3; ++i)
-    {
-        auto& ribbon = ribbonControls[i];
-        auto ribbonArea = ribbonSection.removeFromTop(60);
-        
-        // Title and enable button
-        auto titleRow = ribbonArea.removeFromTop(20);
-        ribbon.titleLabel.setBounds(titleRow.removeFromLeft(140));
-        ribbon.enableButton.setBounds(titleRow.removeFromLeft(40));
-        
-        // Pattern combo
-        auto patternRow = ribbonArea.removeFromTop(15);
-        ribbon.patternLabel.setBounds(patternRow.removeFromLeft(50));
-        ribbon.patternCombo.setBounds(patternRow.removeFromLeft(130));
-        
-        // Rate and offset knobs side by side
-        auto controlRow = ribbonArea;
-        auto ribbonRateArea = controlRow.removeFromLeft(90);
-        ribbon.rateLabel.setBounds(ribbonRateArea.removeFromBottom(15));
-        ribbon.rateSlider.setBounds(ribbonRateArea);
-        
-        auto offsetArea = controlRow.removeFromLeft(90);
-        ribbon.offsetLabel.setBounds(offsetArea.removeFromBottom(15));
-        ribbon.offsetSlider.setBounds(offsetArea);
-        
-        ribbonSection.removeFromTop(5);
-    }
+    // Bottom row: Swing, Shimmer (centered)
+    auto swingArea = bottomRow.removeFromLeft(120);
+    swingLabel.setBounds(swingArea.removeFromBottom(15));
+    swingSlider.setBounds(swingArea.reduced(15, 0));
+    
+    auto shimmerArea = bottomRow.removeFromLeft(120);
+    shimmerLabel.setBounds(shimmerArea.removeFromBottom(15));
+    shimmerSlider.setBounds(shimmerArea.reduced(15, 0));
 }
 
 void HarmonyScapeAudioProcessorEditor::layoutSpatialControls()

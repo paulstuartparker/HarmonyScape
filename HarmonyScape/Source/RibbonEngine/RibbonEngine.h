@@ -31,21 +31,28 @@ public:
         bool enabled = false;
         RibbonPattern pattern = RibbonPattern::Up;
         float rate = 0.5f;          // Speed of arpeggiation (0.0-1.0)
+        float gate = 0.8f;          // Note duration (0.1-1.0) - like Ableton's gate
         float offset = 0.0f;        // Phase offset (0.0-1.0)
         float spatialSpread = 0.5f; // How much this ribbon affects spatial position
         float intensity = 1.0f;     // Volume/presence of this ribbon
         float decay = 0.8f;         // How quickly notes fade in the ribbon
+        float swing = 0.0f;         // Swing amount for this ribbon (0.0-1.0)
     };
     
-    // Global ribbon parameters
+    // Master ribbon parameters - intelligent control of all ribbons
     struct RibbonParams
     {
-        int activeRibbons = 1;      // Number of active ribbons (1-5)
-        float globalRate = 0.5f;    // Master rate control
-        float spatialMovement = 0.3f; // How much ribbons affect spatial positioning
-        float rhythmSync = 0.0f;    // Sync to host tempo (0=free, 1=sync)
-        bool enableRibbons = true;  // Master enable/disable
+        bool enableRibbons = true;      // Master enable/disable
+        int activeRibbons = 3;          // Number of active ribbons (1-5)
         
+        // MASTER CONTROLS - These intelligently control all ribbons
+        float pulse = 0.5f;             // Overall rhythmic energy/speed (0.0-1.0)
+        float variation = 0.5f;         // How much ribbons differ from each other (0.0-1.0)
+        float wobble = 0.3f;            // Spatial movement and timing modulation (0.0-1.0)  
+        float swing = 0.0f;             // Global groove feel (0.0-1.0)
+        float shimmer = 0.2f;           // High-frequency sparkle and complexity (0.0-1.0)
+        
+        // INTERNAL - These are calculated from master controls
         std::array<RibbonConfig, MAX_RIBBONS> ribbons;
     };
     
@@ -79,9 +86,14 @@ public:
      * @return Array of RibbonNote events to be triggered
      */
     juce::Array<RibbonNote> processChord(const juce::Array<int>& chordNotes,
-                                        const RibbonParams& ribbonParams,
+                                        RibbonParams& ribbonParams,  // Note: now non-const
                                         int numSamples,
                                         double hostTempo = 120.0);
+    
+    /**
+     * Calculate individual ribbon configurations from master controls
+     */
+    void calculateRibbonConfigurations(RibbonParams& params);
     
     /**
      * Update internal timing and generate note events for this block

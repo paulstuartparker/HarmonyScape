@@ -28,24 +28,14 @@ HarmonyScapeAudioProcessor::HarmonyScapeAudioProcessor()
     // Get ribbon parameter pointers
     enableRibbonsParam = parameters.getRawParameterValue("enableRibbons");
     ribbonCountParam = parameters.getRawParameterValue("ribbonCount");
-    ribbonRateParam = parameters.getRawParameterValue("ribbonRate");
-    ribbonSpreadParam = parameters.getRawParameterValue("ribbonSpread");
-    ribbonIntensityParam = parameters.getRawParameterValue("ribbonIntensity");
-    
-    // Get individual ribbon parameter pointers
-    for (int i = 0; i < 3; ++i)
-    {
-        juce::String prefix = "ribbon" + juce::String(i + 1);
-        ribbonParams[i].enable = parameters.getRawParameterValue(prefix + "Enable");
-        ribbonParams[i].pattern = parameters.getRawParameterValue(prefix + "Pattern");
-        ribbonParams[i].rate = parameters.getRawParameterValue(prefix + "Rate");
-        ribbonParams[i].offset = parameters.getRawParameterValue(prefix + "Offset");
-    }
+    pulseParam = parameters.getRawParameterValue("pulse");
+    variationParam = parameters.getRawParameterValue("variation");
+    wobbleParam = parameters.getRawParameterValue("wobble");
+    swingParam = parameters.getRawParameterValue("swing");
+    shimmerParam = parameters.getRawParameterValue("shimmer");
     
     // Get legacy rhythmic parameter pointers
-    swingParam = parameters.getRawParameterValue("swing");
     grooveParam = parameters.getRawParameterValue("groove");
-    shimmerParam = parameters.getRawParameterValue("shimmer");
     shimmerRateParam = parameters.getRawParameterValue("shimmerRate");
     enableRhythmParam = parameters.getRawParameterValue("enableRhythm");
 }
@@ -169,25 +159,15 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
     }
     
-    // Create ribbon parameters structure
+    // Create ribbon parameters structure with NEW MASTER CONTROLS
     RibbonEngine::RibbonParams ribbonParams;
     ribbonParams.enableRibbons = *enableRibbonsParam > 0.5f;
     ribbonParams.activeRibbons = static_cast<int>(*ribbonCountParam);
-    ribbonParams.globalRate = *ribbonRateParam;
-    ribbonParams.spatialMovement = *ribbonSpreadParam;
-    
-    // Configure individual ribbons
-    for (int i = 0; i < 3; ++i)
-    {
-        ribbonParams.ribbons[i].enabled = *this->ribbonParams[i].enable > 0.5f;
-        ribbonParams.ribbons[i].pattern = static_cast<RibbonEngine::RibbonPattern>(
-            static_cast<int>(*this->ribbonParams[i].pattern));
-        ribbonParams.ribbons[i].rate = *this->ribbonParams[i].rate;
-        ribbonParams.ribbons[i].offset = *this->ribbonParams[i].offset;
-        ribbonParams.ribbons[i].intensity = *ribbonIntensityParam;
-        ribbonParams.ribbons[i].spatialSpread = *ribbonSpreadParam;
-        ribbonParams.ribbons[i].decay = 0.8f; // Good default for musical decay
-    }
+    ribbonParams.pulse = *pulseParam;
+    ribbonParams.variation = *variationParam;
+    ribbonParams.wobble = *wobbleParam;
+    ribbonParams.swing = *swingParam;
+    ribbonParams.shimmer = *shimmerParam;
     
     // Process ribbons if enabled and we have notes to arpeggiate
     juce::MidiBuffer ribbonMidi;

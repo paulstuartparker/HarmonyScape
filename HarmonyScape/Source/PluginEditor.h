@@ -66,32 +66,23 @@ private:
     juce::Label sustainLabel;
     juce::Label releaseLabel;
     
-    // New UI Components - Ribbon Controls
+    // New Master Ribbon Controls (replacing complex individual controls)
     juce::ToggleButton enableRibbonsButton;
-    juce::Label ribbonsLabel;
     juce::Label ribbonsHeaderLabel;
     juce::Slider ribbonCountSlider;
     juce::Label ribbonCountLabel;
-    juce::Slider ribbonRateSlider;
-    juce::Label ribbonRateLabel;
-    juce::Slider ribbonSpreadSlider;
-    juce::Label ribbonSpreadLabel;
-    juce::Slider ribbonIntensitySlider;
-    juce::Label ribbonIntensityLabel;
     
-    // Individual ribbon controls (first 3)
-    struct RibbonControlSet
-    {
-        juce::ToggleButton enableButton;
-        juce::ComboBox patternCombo;
-        juce::Slider rateSlider;
-        juce::Slider offsetSlider;
-        juce::Label titleLabel;
-        juce::Label patternLabel;
-        juce::Label rateLabel;
-        juce::Label offsetLabel;
-    };
-    std::array<RibbonControlSet, 3> ribbonControls;
+    // MASTER CONTROLS - these intelligently control all ribbons
+    juce::Slider pulseSlider;           // Overall rhythmic energy/speed
+    juce::Label pulseLabel;
+    juce::Slider variationSlider;       // How much ribbons differ from each other
+    juce::Label variationLabel;
+    juce::Slider wobbleSlider;          // Spatial movement and timing modulation
+    juce::Label wobbleLabel;
+    juce::Slider swingSlider;           // Global groove feel
+    juce::Label swingLabel;
+    juce::Slider shimmerSlider;         // High-frequency sparkle and complexity
+    juce::Label shimmerLabel;
     
     // Enhanced spatial controls
     juce::ToggleButton enableMovementButton;
@@ -115,22 +106,14 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sustainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> releaseAttachment;
     
-    // Parameter attachments - Ribbons
+    // Parameter attachments - Master Ribbon Controls
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> enableRibbonsAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ribbonCountAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ribbonRateAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ribbonSpreadAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ribbonIntensityAttachment;
-    
-    // Individual ribbon attachments
-    struct RibbonAttachmentSet
-    {
-        std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> enableAttachment;
-        std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patternAttachment;
-        std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> rateAttachment;
-        std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> offsetAttachment;
-    };
-    std::array<RibbonAttachmentSet, 3> ribbonAttachments;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> pulseAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> variationAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> wobbleAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> swingAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> shimmerAttachment;
     
     // Parameter attachments - Enhanced Spatial
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> enableMovementAttachment;
