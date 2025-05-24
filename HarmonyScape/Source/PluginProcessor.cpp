@@ -183,20 +183,41 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         auto ribbonNotes = ribbonEngine.processChord(currentChordNotes, ribbonParams, 
                                                     buffer.getNumSamples(), 120.0);
         
-        // Convert ribbon notes to MIDI events
+        // Convert ribbon notes to MIDI events with proper timing
         for (const auto& ribbonNote : ribbonNotes)
         {
             if (ribbonNote.active)
             {
-                auto noteOnMsg = juce::MidiMessage::noteOn(1, ribbonNote.midiNote, 
-                                                          ribbonNote.velocity);
-                ribbonMidi.addEvent(noteOnMsg, 0); // Add at start of buffer
+                // Calculate sample position within this buffer based on start time
+                double samplesPerSecond = getSampleRate();
+                double currentTimeInSamples = ribbonEngine.getCurrentTime();
                 
-                // Schedule note off (simplified for now)
-                auto noteOffMsg = juce::MidiMessage::noteOff(1, ribbonNote.midiNote);
-                int noteOffSample = juce::jmin(buffer.getNumSamples() - 1,
-                                             static_cast<int>(ribbonNote.duration / 44100.0 * getSampleRate()));
-                ribbonMidi.addEvent(noteOffMsg, noteOffSample);
+                // Ribbon note start time relative to current buffer
+                double noteStartSample = ribbonNote.startTime - currentTimeInSamples;
+                
+                // Only add notes that start within this buffer
+                if (noteStartSample >= 0 && noteStartSample < buffer.getNumSamples())
+                {
+                    int samplePosition = static_cast<int>(noteStartSample);
+                    
+                    // Use higher velocity for ribbon notes to make them audible
+                    float ribbonVelocity = juce::jlimit(0.3f, 1.0f, ribbonNote.velocity * 1.5f);
+                    
+                    auto noteOnMsg = juce::MidiMessage::noteOn(1, ribbonNote.midiNote, ribbonVelocity);
+                    ribbonMidi.addEvent(noteOnMsg, samplePosition);
+                    
+                    // Calculate note duration in samples (make notes shorter and punchier)
+                    double noteDurationSeconds = 0.1 + (ribbonParams.globalRate * 0.2); // 100-300ms depending on rate
+                    int noteDurationSamples = static_cast<int>(noteDurationSeconds * samplesPerSecond);
+                    
+                    // Schedule note off within buffer if duration allows
+                    int noteOffSample = samplePosition + noteDurationSamples;
+                    if (noteOffSample < buffer.getNumSamples())
+                    {
+                        auto noteOffMsg = juce::MidiMessage::noteOff(1, ribbonNote.midiNote);
+                        ribbonMidi.addEvent(noteOffMsg, noteOffSample);
+                    }
+                }
             }
         }
     }

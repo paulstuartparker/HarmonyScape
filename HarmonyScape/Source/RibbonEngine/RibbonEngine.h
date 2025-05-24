@@ -102,6 +102,11 @@ public:
      * Set the current chord for ribbon processing
      */
     void setCurrentChord(const juce::Array<int>& chordNotes);
+    
+    /**
+     * Get current time position in samples
+     */
+    double getCurrentTime() const { return currentSamplePosition; }
 
 private:
     /**

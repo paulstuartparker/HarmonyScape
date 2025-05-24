@@ -107,12 +107,15 @@ void HarmonyScapeAudioProcessorEditor::setupRibbonControls()
     auto setupLabel = [this](juce::Label& label, const juce::String& text) {
         label.setText(text, juce::dontSendNotification);
         label.setJustificationType(juce::Justification::centred);
+        label.setFont(10.0f);
         addAndMakeVisible(label);
     };
     
-    auto setupRotarySlider = [this](juce::Slider& slider) {
-        slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+    auto setupRotaryKnob = [this](juce::Slider& slider) {
+        slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 16);
+        slider.setColour(juce::Slider::thumbColourId, juce::Colours::cyan);
+        slider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::cyan.withAlpha(0.7f));
         addAndMakeVisible(slider);
     };
     
@@ -128,22 +131,22 @@ void HarmonyScapeAudioProcessorEditor::setupRibbonControls()
     ribbonsHeaderLabel.setJustificationType(juce::Justification::centred);
     
     // Global ribbon controls
-    setupRotarySlider(ribbonCountSlider);
+    setupRotaryKnob(ribbonCountSlider);
     ribbonCountSlider.setRange(1, 5, 1);
     ribbonCountSlider.setValue(2);
     setupLabel(ribbonCountLabel, "Count");
     
-    setupRotarySlider(ribbonRateSlider);
+    setupRotaryKnob(ribbonRateSlider);
     ribbonRateSlider.setRange(0.0, 1.0, 0.01);
     ribbonRateSlider.setValue(0.5);
     setupLabel(ribbonRateLabel, "Rate");
     
-    setupRotarySlider(ribbonSpreadSlider);
+    setupRotaryKnob(ribbonSpreadSlider);
     ribbonSpreadSlider.setRange(0.0, 1.0, 0.01);
     ribbonSpreadSlider.setValue(0.6);
     setupLabel(ribbonSpreadLabel, "Spread");
     
-    setupRotarySlider(ribbonIntensitySlider);
+    setupRotaryKnob(ribbonIntensitySlider);
     ribbonIntensitySlider.setRange(0.0, 1.0, 0.01);
     ribbonIntensitySlider.setValue(0.8);
     setupLabel(ribbonIntensityLabel, "Intensity");
@@ -169,17 +172,21 @@ void HarmonyScapeAudioProcessorEditor::setupRibbonControls()
         ribbon.patternCombo.addItem("Spiral", 7);
         ribbon.patternCombo.setSelectedId((i % 7) + 1);
         
-        // Rate slider
+        // Rate knob (changed from linear slider to rotary knob)
         addAndMakeVisible(ribbon.rateSlider);
-        ribbon.rateSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-        ribbon.rateSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        ribbon.rateSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+        ribbon.rateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 14);
+        ribbon.rateSlider.setColour(juce::Slider::thumbColourId, juce::Colours::orange);
+        ribbon.rateSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::orange.withAlpha(0.7f));
         ribbon.rateSlider.setRange(0.0, 1.0, 0.01);
         ribbon.rateSlider.setValue(0.5 + i * 0.1);
         
-        // Offset slider
+        // Offset knob (changed from linear slider to rotary knob)
         addAndMakeVisible(ribbon.offsetSlider);
-        ribbon.offsetSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-        ribbon.offsetSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        ribbon.offsetSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+        ribbon.offsetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 14);
+        ribbon.offsetSlider.setColour(juce::Slider::thumbColourId, juce::Colours::orange);
+        ribbon.offsetSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::orange.withAlpha(0.7f));
         ribbon.offsetSlider.setRange(0.0, 1.0, 0.01);
         ribbon.offsetSlider.setValue(i * 0.33);
         
@@ -189,13 +196,8 @@ void HarmonyScapeAudioProcessorEditor::setupRibbonControls()
         ribbon.titleLabel.setColour(juce::Label::textColourId, juce::Colours::orange);
         
         setupLabel(ribbon.patternLabel, "Pattern");
-        ribbon.patternLabel.setFont(9.0f);
-        
         setupLabel(ribbon.rateLabel, "Rate");
-        ribbon.rateLabel.setFont(9.0f);
-        
         setupLabel(ribbon.offsetLabel, "Offset");
-        ribbon.offsetLabel.setFont(9.0f);
     }
 }
 
@@ -204,12 +206,15 @@ void HarmonyScapeAudioProcessorEditor::setupSpatialControls()
     auto setupLabel = [this](juce::Label& label, const juce::String& text) {
         label.setText(text, juce::dontSendNotification);
         label.setJustificationType(juce::Justification::centred);
+        label.setFont(10.0f);
         addAndMakeVisible(label);
     };
     
-    auto setupRotarySlider = [this](juce::Slider& slider) {
-        slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+    auto setupRotaryKnob = [this](juce::Slider& slider) {
+        slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 16);
+        slider.setColour(juce::Slider::thumbColourId, juce::Colours::yellow);
+        slider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::yellow.withAlpha(0.7f));
         addAndMakeVisible(slider);
     };
     
@@ -225,22 +230,22 @@ void HarmonyScapeAudioProcessorEditor::setupSpatialControls()
     movementLabel.setJustificationType(juce::Justification::centred);
     
     // Movement controls
-    setupRotarySlider(movementRateSlider);
+    setupRotaryKnob(movementRateSlider);
     movementRateSlider.setRange(0.0, 1.0, 0.01);
     movementRateSlider.setValue(0.5);
     setupLabel(movementRateLabel, "Rate");
     
-    setupRotarySlider(movementDepthSlider);
+    setupRotaryKnob(movementDepthSlider);
     movementDepthSlider.setRange(0.0, 1.0, 0.01);
     movementDepthSlider.setValue(0.3);
     setupLabel(movementDepthLabel, "Depth");
     
-    setupRotarySlider(heightSlider);
+    setupRotaryKnob(heightSlider);
     heightSlider.setRange(0.0, 1.0, 0.01);
     heightSlider.setValue(0.5);
     setupLabel(heightLabel, "Height");
     
-    setupRotarySlider(depthSlider);
+    setupRotaryKnob(depthSlider);
     depthSlider.setRange(0.0, 1.0, 0.01);
     depthSlider.setValue(0.5);
     setupLabel(depthLabel, "Depth");
@@ -441,38 +446,38 @@ void HarmonyScapeAudioProcessorEditor::layoutRibbonControls()
     
     // Enable button
     enableRibbonsButton.setBounds(ribbonSection.removeFromTop(25).reduced(40, 0));
-    ribbonSection.removeFromTop(10);
+    ribbonSection.removeFromTop(5);
     
-    // Global controls in 2x2 grid
-    auto globalArea = ribbonSection.removeFromTop(120);
-    auto topRow = globalArea.removeFromTop(60);
+    // Global controls in 2x2 grid - made larger for knobs
+    auto globalArea = ribbonSection.removeFromTop(140);
+    auto topRow = globalArea.removeFromTop(70);
     auto bottomRow = globalArea;
     
-    // Top row
+    // Top row - increased width for knobs
     auto countArea = topRow.removeFromLeft(70);
-    ribbonCountLabel.setBounds(countArea.removeFromTop(15));
+    ribbonCountLabel.setBounds(countArea.removeFromBottom(15));
     ribbonCountSlider.setBounds(countArea);
     
     auto rateArea = topRow.removeFromLeft(70);
-    ribbonRateLabel.setBounds(rateArea.removeFromTop(15));
+    ribbonRateLabel.setBounds(rateArea.removeFromBottom(15));
     ribbonRateSlider.setBounds(rateArea);
     
     // Bottom row
     auto spreadArea = bottomRow.removeFromLeft(70);
-    ribbonSpreadLabel.setBounds(spreadArea.removeFromTop(15));
+    ribbonSpreadLabel.setBounds(spreadArea.removeFromBottom(15));
     ribbonSpreadSlider.setBounds(spreadArea);
     
     auto intensityArea = bottomRow.removeFromLeft(70);
-    ribbonIntensityLabel.setBounds(intensityArea.removeFromTop(15));
+    ribbonIntensityLabel.setBounds(intensityArea.removeFromBottom(15));
     ribbonIntensitySlider.setBounds(intensityArea);
     
-    ribbonSection.removeFromTop(10);
+    ribbonSection.removeFromTop(5);
     
-    // Individual ribbon controls
+    // Individual ribbon controls - made larger for knobs
     for (int i = 0; i < 3; ++i)
     {
         auto& ribbon = ribbonControls[i];
-        auto ribbonArea = ribbonSection.removeFromTop(55);
+        auto ribbonArea = ribbonSection.removeFromTop(60);
         
         // Title and enable button
         auto titleRow = ribbonArea.removeFromTop(20);
@@ -484,14 +489,14 @@ void HarmonyScapeAudioProcessorEditor::layoutRibbonControls()
         ribbon.patternLabel.setBounds(patternRow.removeFromLeft(50));
         ribbon.patternCombo.setBounds(patternRow.removeFromLeft(130));
         
-        // Rate and offset sliders
-        auto controlRow = ribbonArea.removeFromTop(20);
+        // Rate and offset knobs side by side
+        auto controlRow = ribbonArea;
         auto ribbonRateArea = controlRow.removeFromLeft(90);
-        ribbon.rateLabel.setBounds(ribbonRateArea.removeFromTop(10));
+        ribbon.rateLabel.setBounds(ribbonRateArea.removeFromBottom(15));
         ribbon.rateSlider.setBounds(ribbonRateArea);
         
         auto offsetArea = controlRow.removeFromLeft(90);
-        ribbon.offsetLabel.setBounds(offsetArea.removeFromTop(10));
+        ribbon.offsetLabel.setBounds(offsetArea.removeFromBottom(15));
         ribbon.offsetSlider.setBounds(offsetArea);
         
         ribbonSection.removeFromTop(5);
@@ -508,34 +513,42 @@ void HarmonyScapeAudioProcessorEditor::layoutSpatialControls()
     
     // Enable button
     enableMovementButton.setBounds(spatialSection.removeFromTop(25).reduced(40, 0));
-    spatialSection.removeFromTop(10);
+    spatialSection.removeFromTop(5);
     
-    // Spatial visualizer
-    spatialVisualizer.setBounds(spatialSection.removeFromTop(100).reduced(10));
-    spatialSection.removeFromTop(10);
+    // Spatial visualizer - made slightly smaller to accommodate knobs
+    spatialVisualizer.setBounds(spatialSection.removeFromTop(80).reduced(10));
+    spatialSection.removeFromTop(5);
     
-    // Control knobs in 2x2 grid
-    auto controlArea = spatialSection.removeFromTop(120);
-    auto topRow = controlArea.removeFromTop(60);
+    // Control knobs in 2x2 grid - made larger for proper knob display
+    auto controlArea = spatialSection.removeFromTop(140);
+    auto topRow = controlArea.removeFromTop(70);
     auto bottomRow = controlArea;
     
     // Top row
     auto rateArea = topRow.removeFromLeft(65);
-    movementRateLabel.setBounds(rateArea.removeFromTop(15));
+    movementRateLabel.setBounds(rateArea.removeFromBottom(15));
     movementRateSlider.setBounds(rateArea);
     
     auto depthArea = topRow.removeFromLeft(65);
-    movementDepthLabel.setBounds(depthArea.removeFromTop(15));
+    movementDepthLabel.setBounds(depthArea.removeFromBottom(15));
     movementDepthSlider.setBounds(depthArea);
     
     // Bottom row
     auto heightArea = bottomRow.removeFromLeft(65);
-    heightLabel.setBounds(heightArea.removeFromTop(15));
+    heightLabel.setBounds(heightArea.removeFromBottom(15));
     heightSlider.setBounds(heightArea);
     
     auto depthSliderArea = bottomRow.removeFromLeft(65);
-    depthLabel.setBounds(depthSliderArea.removeFromTop(15));
+    depthLabel.setBounds(depthSliderArea.removeFromBottom(15));
     depthSlider.setBounds(depthSliderArea);
+    
+    // Use remaining space for additional info/controls if needed
+    auto remainingSpace = spatialSection;
+    if (remainingSpace.getHeight() > 20)
+    {
+        // Could add tempo sync indicator, pattern info, etc.
+        // For now, leave space for future features
+    }
 }
 
 void HarmonyScapeAudioProcessorEditor::timerCallback()
