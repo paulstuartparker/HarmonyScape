@@ -191,8 +191,8 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                 
                 if (ribbonNote.isNoteOn)
                 {
-                    // Note ON event
-                    float ribbonVelocity = juce::jlimit(0.4f, 0.9f, ribbonNote.velocity);
+                    // Note ON event - BOOST VELOCITY for prominence!
+                    float ribbonVelocity = juce::jlimit(0.7f, 1.0f, ribbonNote.velocity * 1.2f);
                     auto noteOnMsg = juce::MidiMessage::noteOn(1, ribbonNote.midiNote, ribbonVelocity);
                     ribbonMidi.addEvent(noteOnMsg, samplePosition);
                     
@@ -215,25 +215,55 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Store ribbon notes for keyboard visualization
     spatialEngine.setRibbonNotes(activeRibbonNotes);
     
-    // Combine all MIDI sources for audio processing
+    // Combine MIDI sources for audio processing - RIBBONS REPLACE HARMONY!
     juce::MidiBuffer combinedMidi;
     
-    // Add user input MIDI
-    for (const auto metadata : midiMessages)
+    if (ribbonParams.enableRibbons && !ribbonMidi.isEmpty())
     {
-        combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
+        // RIBBONS ARE ENABLED - they replace the sustained harmony!
+        
+        // Add user input MIDI (original notes, but reduce velocity for base)
+        for (const auto metadata : midiMessages)
+        {
+            auto message = metadata.getMessage();
+            if (message.isNoteOn())
+            {
+                // Reduce user input to 30% when ribbons are active (subtle base)
+                auto reducedMsg = juce::MidiMessage::noteOn(message.getChannel(), 
+                    message.getNoteNumber(), message.getVelocity() * 0.3f);
+                combinedMidi.addEvent(reducedMsg, metadata.samplePosition);
+            }
+            else
+            {
+                combinedMidi.addEvent(message, metadata.samplePosition);
+            }
+        }
+        
+        // SKIP the generated chord harmony completely - ribbons replace it!
+        
+        // Add ribbon MIDI at FULL VOLUME - these are the stars!
+        for (const auto metadata : ribbonMidi)
+        {
+            combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
+        }
     }
-    
-    // Add generated chord harmony
-    for (const auto metadata : chordOutput)
+    else
     {
-        combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
-    }
-    
-    // Add ribbon MIDI
-    for (const auto metadata : ribbonMidi)
-    {
-        combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
+        // RIBBONS DISABLED - use normal harmony processing
+        
+        // Add user input MIDI
+        for (const auto metadata : midiMessages)
+        {
+            combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
+        }
+        
+        // Add generated chord harmony
+        for (const auto metadata : chordOutput)
+        {
+            combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
+        }
+        
+        // No ribbons to add
     }
     
     // Convert waveform parameter to enum
