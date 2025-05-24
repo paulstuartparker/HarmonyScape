@@ -1543,4 +1543,5 @@ CMakeFiles/HarmonyScape.dir/Source/PluginEditor.cpp.o: \
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/SpatialEngine.h \
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/../JuceHeader.h \
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/../Voice.h \
-  /Users/paulparker/projects/vstproject/HarmonyScape/Source/PluginEditor.h
+  /Users/paulparker/projects/vstproject/HarmonyScape/Source/PluginEditor.h \
+  /Users/paulparker/projects/vstproject/HarmonyScape/Source/Version.h

@@ -29636,7 +29636,8 @@ CMakeFiles/HarmonyScape.dir/Source/PluginEditor.cpp.o: /Users/paulparker/project
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/PluginProcessor.h \
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/JuceHeader.h \
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/Voice.h \
-  /Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/SpatialEngine.h
+  /Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/SpatialEngine.h \
+  /Users/paulparker/projects/vstproject/HarmonyScape/Source/Version.h
 
 CMakeFiles/HarmonyScape.dir/Source/PluginProcessor.cpp.o: /Users/paulparker/projects/vstproject/HarmonyScape/Source/PluginProcessor.cpp \
   /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk/usr/include/Availability.h \
@@ -32727,6 +32728,8 @@ CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.o: /Users/pau
 
 
 /Users/paulparker/projects/vstproject/HarmonyScape/Source/PluginProcessor.cpp:
+
+/Users/paulparker/projects/vstproject/HarmonyScape/Source/Version.h:
 
 /Users/paulparker/projects/vstproject/HarmonyScape/Source/Voice.h:
 

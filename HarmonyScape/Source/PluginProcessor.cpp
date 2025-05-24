@@ -31,22 +31,22 @@ HarmonyScapeAudioProcessor::HarmonyScapeAudioProcessor()
                                                                  "Attack",
                                                                  0.001f,
                                                                  2.0f,
-                                                                 0.01f),
+                                                                 0.15f),
                       std::make_unique<juce::AudioParameterFloat> ("decay",
                                                                  "Decay",
                                                                  0.001f,
                                                                  2.0f,
-                                                                 0.1f),
+                                                                 0.3f),
                       std::make_unique<juce::AudioParameterFloat> ("sustain",
                                                                  "Sustain",
                                                                  0.0f,
                                                                  1.0f,
-                                                                 0.7f),
+                                                                 0.8f),
                       std::make_unique<juce::AudioParameterFloat> ("release",
                                                                  "Release",
                                                                  0.001f,
                                                                  5.0f,
-                                                                 0.2f)
+                                                                 0.3f)
                   })
 {
     chordDensityParam = parameters.getRawParameterValue("chordDensity");
@@ -168,6 +168,22 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Process MIDI messages through chord engine
     auto chordOutput = chordEngine.processMidi(midiMessages, *chordDensityParam);
     
+    // Combine user input MIDI with generated chord output
+    // This ensures both original notes and harmony are rendered together
+    juce::MidiBuffer combinedMidi;
+    
+    // Add user input MIDI
+    for (const auto metadata : midiMessages)
+    {
+        combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
+    }
+    
+    // Add generated chord harmony
+    for (const auto metadata : chordOutput)
+    {
+        combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
+    }
+    
     // Update generated notes tracking for visualization
     generatedOutputNotes.clearQuick();
     for (const auto metadata : chordOutput)
@@ -196,8 +212,8 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         *releaseParam
     };
     
-    // Apply spatial processing with waveform and volume
-    spatialEngine.process(buffer, chordOutput, *spatialWidthParam, waveformType, *volumeParam, adsr);
+    // Apply spatial processing with combined MIDI (user input + generated harmony)
+    spatialEngine.process(buffer, combinedMidi, *spatialWidthParam, waveformType, *volumeParam, adsr);
     
     // Get currently sounding notes from the spatial engine - important for visualization
     updateActiveVoices(spatialEngine.getActiveVoiceNotes());

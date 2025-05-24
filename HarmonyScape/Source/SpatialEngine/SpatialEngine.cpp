@@ -144,19 +144,19 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
     {
         int noteNumber = stoppedNotes[i];
         
-        // Release any matching voices - ensure release is triggered
+        // Release any matching voices - ensure release is triggered for ALL matching voices
         for (auto& voice : voices)
         {
-            if (voice.active && voice.midiNote == noteNumber)
+            if (voice.midiNote == noteNumber && voice.envelopeState != Voice::EnvelopeState::Idle)
             {
-                // CRITICAL: Force transition to release phase
+                // CRITICAL: Force transition to release phase immediately
                 voice.active = false;
-                voice.envelopeState = Voice::EnvelopeState::Release;
                 
-                // This is critical for sustain->release transition
-                // Don't wait for the next processing cycle - begin release immediately
-                float releaseRate = voice.envelopeLevel / (adsr.release * static_cast<float>(sampleRate));
-                voice.envelopeLevel -= releaseRate * 0.1f; // Start the release phase with an initial decrease
+                // Only transition if not already in release
+                if (voice.envelopeState != Voice::EnvelopeState::Release)
+                {
+                    voice.envelopeState = Voice::EnvelopeState::Release;
+                }
             }
         }
     }
@@ -226,13 +226,11 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
     switch (voice.envelopeState)
     {
         case Voice::EnvelopeState::Attack:
-            // Attack phase - ramp up to 1.0
             if (adsr.attack > 0.0f)
-                envelopeIncrement = 1.0f / (adsr.attack * static_cast<float>(sampleRate)); // FIX: Removed 0.5f multiplier for proper attack time
+                envelopeIncrement = 1.0f / (adsr.attack * static_cast<float>(sampleRate));
             else
-                envelopeIncrement = 1.0f / (0.001f * static_cast<float>(sampleRate)); // FIX: Use minimum attack time to avoid clicks
+                envelopeIncrement = 1.0f / (0.001f * static_cast<float>(sampleRate));
             
-            // Transition to decay once we reach peak
             if (voice.envelopeLevel >= 1.0f)
             {
                 voice.envelopeLevel = 1.0f;
@@ -241,13 +239,11 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
             break;
             
         case Voice::EnvelopeState::Decay:
-            // Decay phase - ramp down to sustain level
             if (adsr.decay > 0.0f)
                 envelopeIncrement = (adsr.sustain - 1.0f) / (adsr.decay * static_cast<float>(sampleRate));
             else
-                envelopeIncrement = adsr.sustain - 1.0f; // Immediate decay
+                envelopeIncrement = adsr.sustain - 1.0f;
             
-            // Transition to sustain once we reach sustain level
             if (voice.envelopeLevel <= adsr.sustain)
             {
                 voice.envelopeLevel = adsr.sustain;
@@ -257,39 +253,29 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
             break;
             
         case Voice::EnvelopeState::Sustain:
-            // Sustain phase - hold at sustain level
             envelopeIncrement = 0.0f;
             voice.envelopeLevel = adsr.sustain;
             
-            // If the note is no longer active, FORCE transition to release
-            // This is CRITICAL for proper ADSR behavior
+            // CRITICAL: Immediately transition to release when note is released
             if (!voice.active)
             {
                 voice.envelopeState = Voice::EnvelopeState::Release;
-                // Force immediate decrement to start release
-                envelopeIncrement = -0.01f;
             }
             break;
             
         case Voice::EnvelopeState::Release:
-            // Release phase - ramp down to zero
             if (adsr.release > 0.001f)
             {
-                // Calculate release rate based on current level, but ensure it's never too small
-                float releaseRate = std::max(0.001f, voice.envelopeLevel) / (adsr.release * static_cast<float>(sampleRate));
-                envelopeIncrement = -releaseRate;
-                
-                // Ensure we're always decreasing at a minimum rate
-                if (std::abs(envelopeIncrement) < 0.0001f)
-                    envelopeIncrement = -0.0001f;
+                // Smooth release calculation
+                float releaseRate = voice.envelopeLevel / (adsr.release * static_cast<float>(sampleRate));
+                envelopeIncrement = -std::max(0.0001f, releaseRate); // Ensure minimum release rate
             }
             else
             {
-                // Fast release if release time is very small
-                envelopeIncrement = -0.1f;
+                envelopeIncrement = -0.01f; // Fast release for very short release times
             }
             
-            // Transition to idle once we reach a very low level
+            // Transition to idle when envelope reaches zero
             if (voice.envelopeLevel <= 0.001f)
             {
                 voice.envelopeLevel = 0.0f;
@@ -300,14 +286,12 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
             break;
             
         case Voice::EnvelopeState::Idle:
-            // Idle phase - no sound
             envelopeIncrement = 0.0f;
             voice.envelopeLevel = 0.0f;
             voice.active = false;
             break;
             
         default:
-            // Failsafe - if we somehow get an invalid state, force to idle
             voice.envelopeState = Voice::EnvelopeState::Idle;
             voice.envelopeLevel = 0.0f;
             voice.active = false;
@@ -358,9 +342,14 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
         // Generate sample based on waveform type and apply envelope
         float sample = generateSample(voice.phase, waveformType) * voice.envelopeLevel * masterVolume;
         
+        // Apply simple one-pole low-pass filter to reduce clicks and harshness
+        float filterCutoff = 0.95f; // Close to 1.0 = less filtering, closer to 0.0 = more filtering
+        voice.filterState = voice.filterState * filterCutoff + sample * (1.0f - filterCutoff);
+        float filteredSample = voice.filterState;
+        
         // Apply stereo positioning
-        leftBuffer[i] += sample * leftGain;
-        rightBuffer[i] += sample * rightGain;
+        leftBuffer[i] += filteredSample * leftGain;
+        rightBuffer[i] += filteredSample * rightGain;
         
         // Increment phase
         voice.phase += phaseIncrement;

@@ -92,6 +92,7 @@ private:
         
         EnvelopeState envelopeState = EnvelopeState::Idle;
         float envelopeLevel = 0.0f;  // Current envelope level
+        float filterState = 0.0f;    // Simple one-pole low-pass filter state
         
         void trigger(int note, float pos, int chordPos = 0) 
         {
@@ -102,10 +103,12 @@ private:
             envelopeState = EnvelopeState::Attack;
             noteStartTime = juce::Time::currentTimeMillis();
             
-            // Always initialize with a positive envelope level to ensure sound generation starts
-            envelopeLevel = 0.01f;
+            // Start at 0 for proper attack envelope
+            envelopeLevel = 0.0f;
             // Reset phase for clean start
             phase = 0.0f;
+            // Reset filter state
+            filterState = 0.0f;
         }
         
         void release() 
@@ -130,6 +133,7 @@ private:
             active = false;
             envelopeState = EnvelopeState::Idle;
             envelopeLevel = 0.0f;
+            filterState = 0.0f;
         }
         
         // Check if this voice has been playing too long (safety feature)

@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "Version.h"
 
 //==============================================================================
 HarmonyScapeAudioProcessorEditor::HarmonyScapeAudioProcessorEditor (HarmonyScapeAudioProcessor& p, juce::AudioProcessorValueTreeState& vts)
@@ -16,8 +17,14 @@ HarmonyScapeAudioProcessorEditor::HarmonyScapeAudioProcessorEditor (HarmonyScape
         addAndMakeVisible(slider);
     };
     
-    // Main parameter sliders
-    setupRotarySlider(chordDensitySlider);
+    auto setupLinearSlider = [this](juce::Slider& slider) {
+        slider.setSliderStyle(juce::Slider::LinearHorizontal);
+        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
+        addAndMakeVisible(slider);
+    };
+    
+    // Main parameter sliders - chord density as horizontal slider for better feedback
+    setupLinearSlider(chordDensitySlider);
     setupRotarySlider(spatialWidthSlider);
     
     // Waveform combobox
@@ -46,7 +53,12 @@ HarmonyScapeAudioProcessorEditor::HarmonyScapeAudioProcessorEditor (HarmonyScape
     
     // Main parameter labels
     setupLabel(chordDensityLabel, "Chord Density");
+    setupLabel(chordDensityDescLabel, "Minimal harmony");
     setupLabel(spatialWidthLabel, "Spatial Width");
+    
+    // Configure chord density description label with smaller font
+    chordDensityDescLabel.setFont(12.0f);
+    chordDensityDescLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
     
     // Synth control labels
     setupLabel(waveformLabel, "Waveform");
@@ -110,10 +122,16 @@ void HarmonyScapeAudioProcessorEditor::paint (juce::Graphics& g)
     g.setFont (24.0f);
     g.drawFittedText ("HarmonyScape", getLocalBounds().removeFromTop(40), juce::Justification::centred, 1);
     
-    // Add version number
-    g.setFont(14.0f);
+    // Add version number and build indicator
+    g.setFont(12.0f);
     g.setColour(juce::Colours::lightgrey);
-    g.drawText("V1", getWidth() - 30, 10, 25, 20, juce::Justification::right, false);
+    g.drawText(HARMONYSCAPE_VERSION_STRING, getWidth() - 80, 10, 75, 15, juce::Justification::right, false);
+    
+    // Draw build color indicator square for deployment verification
+    g.setColour(juce::Colour::fromFloatRGBA(BUILD_COLOR_R, BUILD_COLOR_G, BUILD_COLOR_B, 1.0f));
+    g.fillRect(getWidth() - 20, 5, 15, 15);
+    g.setColour(juce::Colours::white);
+    g.drawRect(getWidth() - 20, 5, 15, 15, 1);
     
     // Draw section borders
     g.setColour(juce::Colours::lightgrey);
@@ -163,12 +181,17 @@ void HarmonyScapeAudioProcessorEditor::resized()
     // Main controls section
     juce::Rectangle<int> mainSection(10, 75, 280, 125);
     
+    // Labels row
     chordDensityLabel.setBounds(mainSection.removeFromLeft(itemWidth).removeFromTop(labelHeight));
     mainSection.removeFromLeft(marginX);
     spatialWidthLabel.setBounds(mainSection.removeFromLeft(itemWidth).removeFromTop(labelHeight));
     
+    // Sliders row
     mainSection = juce::Rectangle<int>(10, 75 + labelHeight, 280, 125 - labelHeight);
-    chordDensitySlider.setBounds(mainSection.removeFromLeft(itemWidth).removeFromTop(sliderHeight));
+    auto densityColumn = mainSection.removeFromLeft(itemWidth);
+    chordDensitySlider.setBounds(densityColumn.removeFromTop(sliderHeight));
+    chordDensityDescLabel.setBounds(densityColumn.removeFromTop(20)); // Description below slider
+    
     mainSection.removeFromLeft(marginX);
     spatialWidthSlider.setBounds(mainSection.removeFromLeft(itemWidth).removeFromTop(sliderHeight));
     
@@ -226,4 +249,15 @@ void HarmonyScapeAudioProcessorEditor::timerCallback()
     float sustain = *valueTreeState.getRawParameterValue("sustain");
     float release = *valueTreeState.getRawParameterValue("release");
     adsrVisualizer.setADSR(attack, decay, sustain, release);
+    
+    // Update chord density description based on current value
+    float density = *valueTreeState.getRawParameterValue("chordDensity");
+    if (density < 0.3f)
+        chordDensityDescLabel.setText("Minimal harmony", juce::dontSendNotification);
+    else if (density < 0.6f)
+        chordDensityDescLabel.setText("Basic chords", juce::dontSendNotification);
+    else if (density < 0.8f)
+        chordDensityDescLabel.setText("Rich harmony", juce::dontSendNotification);
+    else
+        chordDensityDescLabel.setText("Full voicing", juce::dontSendNotification);
 } 

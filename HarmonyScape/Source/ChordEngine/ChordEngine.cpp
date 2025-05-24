@@ -212,26 +212,62 @@ juce::Array<int> ChordEngine::generateVoicing(const Chord& chord, float density)
     if (chord.isEmpty())
         return voicing;
     
-    // Use chord notes as a basis
-    voicing.addArray(chord.notes);
+    // DON'T include the user's original notes - they're already playing!
+    // We want to generate ADDITIONAL harmonic notes only
     
-    // For MVP, simply use basic octave transpositions based on density
-    // In a full implementation, this would use more sophisticated voicing algorithms
-    
-    int octaveSpread = 1 + static_cast<int>(density * 2); // 1-3 octaves based on density
-    int noteCount = 3 + static_cast<int>(density * 5);    // 3-8 notes based on density
-    
-    // Add octave transpositions of the chord tones
-    for (int octave = 1; octave <= octaveSpread && voicing.size() < noteCount; ++octave)
+    // For single notes, generate simple harmony
+    if (chord.notes.size() == 1)
     {
-        for (auto note : chord.notes)
+        int root = chord.notes[0];
+        
+        // Generate major triad based on density
+        if (density > 0.3f)
         {
-            int transposedNote = note + (octave * 12);
-            if (transposedNote < 108) // Stay within MIDI range
+            voicing.add(root + 4);  // Major third
+            voicing.add(root + 7);  // Perfect fifth
+        }
+        
+        if (density > 0.6f)
+        {
+            voicing.add(root + 12); // Octave
+            voicing.add(root + 16); // Major third + octave
+        }
+        
+        if (density > 0.8f)
+        {
+            voicing.add(root + 19); // Perfect fifth + octave
+            voicing.add(root - 12); // Octave below
+        }
+    }
+    else
+    {
+        // For chord input, add octave transpositions and extensions
+        int octaveSpread = 1 + static_cast<int>(density * 2); // 1-3 octaves based on density
+        int noteCount = 2 + static_cast<int>(density * 4);    // 2-6 additional notes based on density
+        
+        // Add octave transpositions of the chord tones (but not the originals)
+        for (int octave = 1; octave <= octaveSpread && voicing.size() < noteCount; ++octave)
+        {
+            for (auto note : chord.notes)
             {
-                voicing.addIfNotAlreadyThere(transposedNote);
-                if (voicing.size() >= noteCount)
-                    break;
+                int transposedNote = note + (octave * 12);
+                if (transposedNote < 108) // Stay within MIDI range
+                {
+                    voicing.addIfNotAlreadyThere(transposedNote);
+                    if (voicing.size() >= noteCount)
+                        break;
+                }
+            }
+        }
+        
+        // Add some notes below the root for richness
+        if (density > 0.5f && voicing.size() < noteCount)
+        {
+            int root = chord.rootNote;
+            int bassNote = root - 12; // Octave below
+            if (bassNote >= 24) // Keep it reasonable
+            {
+                voicing.addIfNotAlreadyThere(bassNote);
             }
         }
     }

@@ -28,6 +28,9 @@ private:
     // Reference to parameter tree
     juce::AudioProcessorValueTreeState& valueTreeState;
     
+    // IMPORTANT: keyboardState must be declared BEFORE any components that use it
+    juce::MidiKeyboardState keyboardState;
+    
     // UI Components - Keyboard display
     juce::MidiKeyboardComponent midiKeyboard;
     juce::Array<int> userNotes;     // Notes played by user
@@ -43,6 +46,7 @@ private:
     juce::Slider chordDensitySlider;
     juce::Slider spatialWidthSlider;
     juce::Label chordDensityLabel;
+    juce::Label chordDensityDescLabel; // Description of what chord density does
     juce::Label spatialWidthLabel;
     
     // UI Components - ADSR controls
@@ -144,7 +148,6 @@ private:
     };
     
     // Implement custom keyboard to show colored keys
-    juce::MidiKeyboardState keyboardState;
     CustomMidiKeyboard customKeyboard;
     
     // ADSR Visualizer Component
