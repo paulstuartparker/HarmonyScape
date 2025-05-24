@@ -314,14 +314,28 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
     float* rightBuffer = buffer.getWritePointer(1, startSample);
     
     // Convert MIDI note to frequency
-    float frequency = 440.0f * std::pow(2.0f, (voice.midiNote - 69) / 12.0f);
+    float baseFrequency = 440.0f * std::pow(2.0f, (voice.midiNote - 69) / 12.0f);
     
-    // Calculate phase increment
-    float phaseIncrement = frequency / static_cast<float>(sampleRate);
+    // Add subtle pitch modulation for liveliness
+    float lfoPhase = std::fmod(voice.noteStartTime * 0.001f + voice.chordPosition * 0.3f, 1.0f);
+    float pitchModAmount = 0.002f + (voice.chordPosition * 0.001f); // More modulation for higher chord tones
     
     // Calculate stereo position (pan)
     float leftGain = std::sqrt(0.5f - voice.position * 0.5f);
     float rightGain = std::sqrt(0.5f + voice.position * 0.5f);
+    
+    // Dynamic filter cutoff based on envelope and note pitch
+    // Higher cutoff for brighter sound, especially in low notes
+    float baseCutoff = 0.4f + (voice.midiNote / 127.0f) * 0.4f; // Brighter overall
+    
+    // High-pass filter frequency to reduce muddiness
+    float highpassFreq = 80.0f; // 80Hz high-pass
+    if (voice.midiNote < 48) // For low notes
+        highpassFreq = 120.0f; // More aggressive high-pass
+    
+    // Calculate high-pass filter coefficient
+    float highpassCutoff = highpassFreq / static_cast<float>(sampleRate);
+    float highpassCoeff = 1.0f - std::exp(-2.0f * juce::MathConstants<float>::pi * highpassCutoff);
     
     // Render samples
     for (int i = 0; i < numSamples; ++i)
@@ -339,17 +353,45 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
         else if (voice.envelopeLevel < 0.0f)
             voice.envelopeLevel = 0.0f;
         
+        // Apply subtle pitch modulation (vibrato)
+        lfoPhase += 0.0001f; // ~4.4Hz at 44.1kHz
+        if (lfoPhase > 1.0f) lfoPhase -= 1.0f;
+        float pitchMod = 1.0f + std::sin(lfoPhase * 2.0f * juce::MathConstants<float>::pi) * pitchModAmount;
+        float frequency = baseFrequency * pitchMod;
+        
+        // Calculate phase increment with modulation
+        float phaseIncrement = frequency / static_cast<float>(sampleRate);
+        
         // Generate sample based on waveform type and apply envelope
         float sample = generateSample(voice.phase, waveformType) * voice.envelopeLevel * masterVolume;
         
-        // Apply simple one-pole low-pass filter to reduce clicks and harshness
-        float filterCutoff = 0.95f; // Close to 1.0 = less filtering, closer to 0.0 = more filtering
-        voice.filterState = voice.filterState * filterCutoff + sample * (1.0f - filterCutoff);
-        float filteredSample = voice.filterState;
+        // Dynamic filter that opens with envelope (low-pass)
+        float dynamicCutoff = baseCutoff + (voice.envelopeLevel * 0.2f); // Less envelope modulation
         
-        // Apply stereo positioning
-        leftBuffer[i] += filteredSample * leftGain;
-        rightBuffer[i] += filteredSample * rightGain;
+        // Resonant low-pass filter for character
+        float resonance = 0.3f + (voice.chordPosition * 0.05f); // Less resonance for cleaner sound
+        
+        // Simple resonant filter implementation
+        voice.filterState = voice.filterState * dynamicCutoff + sample * (1.0f - dynamicCutoff);
+        float filteredSample = voice.filterState + (sample - voice.filterState) * resonance;
+        
+        // Apply high-pass filter to reduce muddiness
+        voice.highpassState += (filteredSample - voice.highpassState) * highpassCoeff;
+        filteredSample = filteredSample - voice.highpassState;
+        
+        // Soft saturation for warmth (less aggressive)
+        filteredSample = std::tanh(filteredSample * 0.8f) * 0.95f;
+        
+        // Apply stereo positioning with subtle movement
+        float panLfo = std::sin((lfoPhase * 0.3f + voice.chordPosition * 0.2f) * 2.0f * juce::MathConstants<float>::pi);
+        float dynamicPan = voice.position + (panLfo * 0.05f); // Subtle stereo movement
+        dynamicPan = juce::jlimit(-1.0f, 1.0f, dynamicPan);
+        
+        float currentLeftGain = std::sqrt(0.5f - dynamicPan * 0.5f);
+        float currentRightGain = std::sqrt(0.5f + dynamicPan * 0.5f);
+        
+        leftBuffer[i] += filteredSample * currentLeftGain;
+        rightBuffer[i] += filteredSample * currentRightGain;
         
         // Increment phase
         voice.phase += phaseIncrement;
@@ -406,16 +448,43 @@ float SpatialEngine::generateSample(float phase, WaveformType waveformType)
     switch (waveformType)
     {
         case WaveformType::Sine:
-            return std::sin(phase * 2.0f * pi) * 0.9f;
+            // Add some subtle harmonics for warmth
+            return (std::sin(phase * 2.0f * pi) * 0.8f +
+                    std::sin(phase * 4.0f * pi) * 0.1f +  // 2nd harmonic
+                    std::sin(phase * 6.0f * pi) * 0.05f) * 0.9f; // 3rd harmonic
             
         case WaveformType::Saw:
-            return (2.0f * phase - 1.0f) * 0.7f;
+        {
+            // Band-limited saw wave to reduce aliasing
+            float saw = 0.0f;
+            for (int harmonic = 1; harmonic <= 8; ++harmonic)
+            {
+                float amplitude = 1.0f / static_cast<float>(harmonic);
+                saw += std::sin(phase * 2.0f * pi * harmonic) * amplitude;
+            }
+            return saw * 0.5f;
+        }
             
         case WaveformType::Square:
-            return (phase < 0.5f ? 1.0f : -1.0f) * 0.6f;
+        {
+            // Band-limited square wave with only odd harmonics
+            float square = 0.0f;
+            for (int harmonic = 1; harmonic <= 7; harmonic += 2)
+            {
+                float amplitude = 1.0f / static_cast<float>(harmonic);
+                square += std::sin(phase * 2.0f * pi * harmonic) * amplitude;
+            }
+            return square * 0.6f;
+        }
             
         case WaveformType::Triangle:
-            return (phase < 0.5f ? 4.0f * phase - 1.0f : 3.0f - 4.0f * phase) * 0.9f;
+        {
+            // Enhanced triangle with slight detuning for chorus effect
+            float triangle1 = (phase < 0.5f ? 4.0f * phase - 1.0f : 3.0f - 4.0f * phase);
+            float phase2 = std::fmod(phase + 0.002f, 1.0f); // Slight detune
+            float triangle2 = (phase2 < 0.5f ? 4.0f * phase2 - 1.0f : 3.0f - 4.0f * phase2);
+            return (triangle1 * 0.7f + triangle2 * 0.3f) * 0.85f;
+        }
             
         default:
             return 0.0f;

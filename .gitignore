@@ -1,0 +1,117 @@
+# Build artifacts
+/build/
+HarmonyScape/build/
+HarmonyScape_artefacts/
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.a
+*.lib
+*.exe
+*.app
+*.ipa
+*.pdb
+*.mod
+*.ilk
+*.exp
+*.idb
+*.pch
+*.sdf
+*.aps
+*.ncb
+*.suo
+*.user
+*.userprefs
+*.opensdf
+*.VC.db
+*.VC.opendb
+HarmonyScape/Source/Version.h.bak
+
+# Plugin binaries
+*.vst3
+*.component
+*.vst
+*.vst2
+*.lv2
+*.aaxplugin
+*.dll
+*.dylib
+*.bundle
+*.so
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
+*.log
+*.bak
+*.autosave
+*.orig
+*.rej
+*.sublime-workspace
+*.sublime-project
+HarmonyScape/.vs/
+HarmonyScape/.idea/
+HarmonyScape/.vscode/
+HarmonyScape/.cxx/
+HarmonyScape/.cmake/
+HarmonyScape/.cursor/
+HarmonyScape/.settings/
+HarmonyScape/.gradle/
+HarmonyScape/.externalNativeBuild/
+HarmonyScape/.cproject
+HarmonyScape/.project
+HarmonyScape/.classpath
+HarmonyScape/.metadata/
+HarmonyScape/.history/
+HarmonyScape/.cache/
+HarmonyScape/.pytest_cache/
+HarmonyScape/.mypy_cache/
+HarmonyScape/.ipynb_checkpoints/
+
+# JUCE Projucer
+*.jucer
+*.jucelog
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+HarmonyScape/CMakeFiles/
+HarmonyScape/CMakeCache.txt
+HarmonyScape/cmake_install.cmake
+HarmonyScape/Makefile
+HarmonyScape/JUCE/CMakeFiles/
+HarmonyScape/JUCE/CMakeCache.txt
+HarmonyScape/JUCE/cmake_install.cmake
+HarmonyScape/JUCE/Makefile
+HarmonyScape/JUCE/Builds/
+
+# Python/Node/Other
+node_modules/
+venv/
+__pycache__/
+
+# Ignore test output
+HarmonyScape/Tests/build/
+HarmonyScape/Tests/*.o
+HarmonyScape/Tests/*.exe
+
+# Ignore local deploy scripts output
+HarmonyScape/build/*.log
+HarmonyScape/build/*.tmp
+
+# Allow these files (negate previous rules)
+!HarmonyScape/Source/Version.h
+!HarmonyScape/CMakeLists.txt
+!HarmonyScape/build/build_and_deploy.sh
+!HarmonyScape/build/increment_version.sh
+!HarmonyScape/build/deploy_plugin.sh
+!HarmonyScape/build/quick_deploy.sh
+
+# End of .gitignore 

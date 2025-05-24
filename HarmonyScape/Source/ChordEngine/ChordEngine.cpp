@@ -53,43 +53,40 @@ juce::MidiBuffer ChordEngine::processMidi(const juce::MidiBuffer& midiMessages, 
     // Generate output MIDI buffer with chord voicing
     juce::MidiBuffer outputBuffer;
     
-    // First, handle any note-offs that need to be sent
-    for (int i = 0; i < notesOff.size(); ++i)
+    // Calculate new voicing BEFORE sending any note-offs
+    juce::Array<int> newVoicing;
+    if (!currentChord.isEmpty())
     {
-        // Send note-off for any generated notes based on this input note
+        newVoicing = generateVoicing(currentChord, densityParam);
+    }
+    
+    // Now handle note-offs intelligently
+    if (notesOff.size() > 0)
+    {
+        // Only turn off notes that are NOT in the new voicing
         for (int voiceNote : currentVoicing)
         {
-            // Check if this voicing note is related to the note that was turned off
-            // For now, turn off all voicing notes when any input note is released
-            // This ensures proper envelope release behavior
-            outputBuffer.addEvent(juce::MidiMessage::noteOff(1, voiceNote, 0.0f), 0);
+            if (!newVoicing.contains(voiceNote))
+            {
+                // This note is no longer needed, turn it off
+                outputBuffer.addEvent(juce::MidiMessage::noteOff(1, voiceNote, 0.0f), 0);
+            }
         }
     }
     
-    if (!currentChord.isEmpty())
+    // Now send note-ons for truly new notes
+    for (int i = 0; i < newVoicing.size(); ++i)
     {
-        // Generate voicing based on current chord and density parameter
-        auto newVoicing = generateVoicing(currentChord, densityParam);
-        
-        // Only send note-ons for truly new notes
-        for (int i = 0; i < newVoicing.size(); ++i)
+        int newNote = newVoicing[i];
+        if (!currentVoicing.contains(newNote))
         {
-            int newNote = newVoicing[i];
-            if (!currentVoicing.contains(newNote))
-            {
-                // Turn on new notes in the voicing
-                outputBuffer.addEvent(juce::MidiMessage::noteOn(1, newNote, 0.8f), 0);
-            }
+            // Turn on new notes in the voicing
+            outputBuffer.addEvent(juce::MidiMessage::noteOn(1, newNote, 0.8f), 0);
         }
-        
-        // Update current voicing
-        currentVoicing = newVoicing;
     }
-    else
-    {
-        // All notes released - clear voicing
-        currentVoicing.clear();
-    }
+    
+    // Update current voicing
+    currentVoicing = newVoicing;
     
     return outputBuffer;
 }
@@ -212,63 +209,208 @@ juce::Array<int> ChordEngine::generateVoicing(const Chord& chord, float density)
     if (chord.isEmpty())
         return voicing;
     
-    // DON'T include the user's original notes - they're already playing!
-    // We want to generate ADDITIONAL harmonic notes only
-    
-    // For single notes, generate simple harmony
+    // For single notes, generate more colorful and contextual harmony
     if (chord.notes.size() == 1)
     {
         int root = chord.notes[0];
+        int rootPitchClass = root % 12;
         
-        // Generate major triad based on density
-        if (density > 0.3f)
+        // Create different harmonic colors based on the root note and density
+        // Lower density = simpler harmonies, higher density = more complex
+        
+        if (density < 0.33f)
         {
-            voicing.add(root + 4);  // Major third
+            // Simple: Just add a fifth for a power chord feel
             voicing.add(root + 7);  // Perfect fifth
+            
+            // Only add low octave if the root is not already too low
+            if (root > 48 && root < 72) // Avoid mud in low register
+                voicing.add(root - 12);
         }
-        
-        if (density > 0.6f)
+        else if (density < 0.66f)
         {
-            voicing.add(root + 12); // Octave
-            voicing.add(root + 16); // Major third + octave
+            // Medium: Create sus2/sus4 ambiguity for color
+            // Avoid too many notes in the low register
+            if (root < 48) // Low notes
+            {
+                voicing.add(root + 7);   // Perfect fifth
+                voicing.add(root + 12);  // Octave
+                voicing.add(root + 14);  // Major ninth
+            }
+            else // Mid to high notes
+            {
+                voicing.add(root + 2);   // Major second (sus2)
+                voicing.add(root + 7);   // Perfect fifth
+                voicing.add(root + 12);  // Octave
+                
+                // Add some shimmer in the upper register
+                if (root < 72)
+                {
+                    voicing.add(root + 14); // Major ninth
+                    voicing.add(root + 19); // Perfect fifth + octave
+                }
+            }
         }
-        
-        if (density > 0.8f)
+        else
         {
-            voicing.add(root + 19); // Perfect fifth + octave
-            voicing.add(root - 12); // Octave below
+            // Complex: Create a rich, jazz-influenced stack
+            // Use different voicings based on the pitch class for variety
+            // But avoid clustering in low frequencies
+            
+            if (root < 48) // Low register - use wider spacing
+            {
+                switch (rootPitchClass)
+                {
+                    case 0:  // C
+                    case 5:  // F
+                        voicing.add(root + 7);   // Perfect fifth
+                        voicing.add(root + 16);  // Major third + octave
+                        voicing.add(root + 23);  // Major seventh + octave
+                        break;
+                        
+                    case 2:  // D
+                    case 7:  // G
+                    case 9:  // A
+                        voicing.add(root + 7);   // Perfect fifth
+                        voicing.add(root + 15);  // Minor third + octave
+                        voicing.add(root + 22);  // Minor seventh + octave
+                        break;
+                        
+                    default:
+                        voicing.add(root + 7);   // Perfect fifth
+                        voicing.add(root + 12);  // Octave
+                        voicing.add(root + 19);  // Fifth + octave
+                        break;
+                }
+            }
+            else // Mid to high register - normal voicings
+            {
+                switch (rootPitchClass)
+                {
+                    case 0:  // C - Cmaj9#11
+                    case 5:  // F - Fmaj9#11
+                        voicing.add(root + 4);   // Major third
+                        voicing.add(root + 7);   // Perfect fifth
+                        voicing.add(root + 11);  // Major seventh
+                        voicing.add(root + 14);  // Major ninth
+                        if (root < 72)
+                            voicing.add(root + 18);  // #11
+                        break;
+                        
+                    case 2:  // D - Dm11
+                    case 7:  // G - Gm11
+                    case 9:  // A - Am11
+                        voicing.add(root + 3);   // Minor third
+                        voicing.add(root + 7);   // Perfect fifth
+                        voicing.add(root + 10);  // Minor seventh
+                        voicing.add(root + 14);  // Major ninth
+                        if (root < 72)
+                            voicing.add(root + 17);  // Perfect 11th
+                        break;
+                        
+                    case 4:  // E - E7#9
+                    case 11: // B - B7#9
+                        voicing.add(root + 4);   // Major third
+                        voicing.add(root + 7);   // Perfect fifth
+                        voicing.add(root + 10);  // Minor seventh
+                        voicing.add(root + 15);  // #9
+                        break;
+                        
+                    default: // Others - sus4add9
+                        voicing.add(root + 5);   // Perfect fourth
+                        voicing.add(root + 7);   // Perfect fifth
+                        voicing.add(root + 14);  // Major ninth
+                        voicing.add(root + 12);  // Octave
+                        break;
+                }
+                
+                // Only add bass notes if we're in a good range
+                if (root > 60 && root < 84 && voicing.size() < 6)
+                {
+                    voicing.add(root - 12); // Octave below
+                }
+            }
         }
     }
     else
     {
-        // For chord input, add octave transpositions and extensions
-        int octaveSpread = 1 + static_cast<int>(density * 2); // 1-3 octaves based on density
-        int noteCount = 2 + static_cast<int>(density * 4);    // 2-6 additional notes based on density
+        // For chord input, be more selective about what we add
+        // Focus on color tones and upper extensions rather than just octaves
         
-        // Add octave transpositions of the chord tones (but not the originals)
-        for (int octave = 1; octave <= octaveSpread && voicing.size() < noteCount; ++octave)
+        int rootNote = chord.rootNote;
+        bool hasThird = false;
+        bool hasSeventh = false;
+        
+        // Analyze what's in the chord already
+        for (auto note : chord.notes)
         {
+            int interval = (note - rootNote) % 12;
+            if (interval == 3 || interval == 4) hasThird = true;
+            if (interval == 10 || interval == 11) hasSeventh = true;
+        }
+        
+        if (density < 0.33f)
+        {
+            // Light: Just add some sparkle on top
+            if (rootNote + 24 < 108 && rootNote > 36)
+                voicing.add(rootNote + 24); // Two octaves up
+                
+            // Only add bass if root is in mid range
+            if (rootNote > 48 && rootNote < 72)
+                voicing.add(rootNote - 12);
+        }
+        else if (density < 0.66f)
+        {
+            // Medium: Add color tones
+            if (!hasSeventh && rootNote + 11 < 108)
+                voicing.add(rootNote + 11); // Add major 7th for color
+                
+            // Add 9th for shimmer
+            if (rootNote + 14 < 108)
+                voicing.add(rootNote + 14);
+                
+            // Add some upper structure, but avoid too many low notes
             for (auto note : chord.notes)
             {
-                int transposedNote = note + (octave * 12);
-                if (transposedNote < 108) // Stay within MIDI range
-                {
-                    voicing.addIfNotAlreadyThere(transposedNote);
-                    if (voicing.size() >= noteCount)
-                        break;
-                }
+                if (note > 48 && note + 12 < 96 && voicing.size() < 4)
+                    voicing.add(note + 12);
+            }
+        }
+        else
+        {
+            // Complex: Build rich upper structure triads
+            // Avoid adding too many notes below middle C (60)
+            if (chord.name.contains("maj") && rootNote > 36)
+            {
+                if (rootNote + 14 < 108) voicing.add(rootNote + 14); // 9th
+                if (rootNote + 18 < 108) voicing.add(rootNote + 18); // #11
+                if (rootNote + 21 < 108) voicing.add(rootNote + 21); // 13th
+            }
+            else if (chord.name.contains("m") && rootNote > 36)
+            {
+                if (rootNote + 14 < 108) voicing.add(rootNote + 14); // 9th
+                if (rootNote + 17 < 108) voicing.add(rootNote + 17); // 11th
+                if (rootNote + 20 < 108) voicing.add(rootNote + 20); // b13
+            }
+            else if (chord.name.contains("7") && rootNote > 36)
+            {
+                if (rootNote + 14 < 108) voicing.add(rootNote + 14); // 9th
+                if (rootNote + 16 < 108) voicing.add(rootNote + 16); // #9
+                if (rootNote + 21 < 108) voicing.add(rootNote + 21); // 13th
+            }
+            
+            // Only add bass notes if we're in an appropriate range
+            if (rootNote > 48 && rootNote < 72)
+            {
+                voicing.add(rootNote - 12); // Root an octave down
             }
         }
         
-        // Add some notes below the root for richness
-        if (density > 0.5f && voicing.size() < noteCount)
+        // Remove any notes that might clash or are out of reasonable range
+        for (int i = voicing.size() - 1; i >= 0; --i)
         {
-            int root = chord.rootNote;
-            int bassNote = root - 12; // Octave below
-            if (bassNote >= 24) // Keep it reasonable
-            {
-                voicing.addIfNotAlreadyThere(bassNote);
-            }
+            if (voicing[i] < 36 || voicing[i] > 108) // Tighter range to avoid mud
+                voicing.remove(i);
         }
     }
     

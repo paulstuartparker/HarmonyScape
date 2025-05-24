@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # HarmonyScape Build Version Incrementer
-# This script automatically increments the build number and randomizes the color
+# This script automatically increments the build number and cycles through primary colors
 
 VERSION_FILE="../Source/Version.h"
 
@@ -16,10 +16,19 @@ CURRENT_BUILD=$(grep "HARMONYSCAPE_BUILD_NUMBER" "$VERSION_FILE" | sed 's/.*BUIL
 # Increment build number
 NEW_BUILD=$((CURRENT_BUILD + 1))
 
-# Generate random color (avoiding too dark colors)
-R=$(echo "scale=1; ($(od -An -N1 -tu1 < /dev/urandom) % 80 + 20) / 100" | bc -l)
-G=$(echo "scale=1; ($(od -An -N1 -tu1 < /dev/urandom) % 80 + 20) / 100" | bc -l)
-B=$(echo "scale=1; ($(od -An -N1 -tu1 < /dev/urandom) % 80 + 20) / 100" | bc -l)
+# Cycle through primary/vibrant colors based on build number
+COLOR_INDEX=$((NEW_BUILD % 8))
+
+case $COLOR_INDEX in
+    0) R="1.0"; G="0.0"; B="0.0" ;;  # Pure Red
+    1) R="0.0"; G="1.0"; B="0.0" ;;  # Pure Green
+    2) R="0.0"; G="0.0"; B="1.0" ;;  # Pure Blue
+    3) R="1.0"; G="1.0"; B="0.0" ;;  # Yellow
+    4) R="1.0"; G="0.0"; B="1.0" ;;  # Magenta
+    5) R="0.0"; G="1.0"; B="1.0" ;;  # Cyan
+    6) R="1.0"; G="0.5"; B="0.0" ;;  # Orange
+    7) R="0.5"; G="0.0"; B="1.0" ;;  # Purple
+esac
 
 # Create new version file
 cat > "$VERSION_FILE" << EOF

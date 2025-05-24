@@ -5,10 +5,10 @@
 // ADSR parameters structure
 struct ADSRParams
 {
-    float attack = 0.1f;   // In seconds
-    float decay = 0.2f;    // In seconds
-    float sustain = 0.7f;  // Level (0.0-1.0)
-    float release = 0.5f;  // In seconds
+    float attack = 0.01f;   // In seconds - Quick attack for responsiveness
+    float decay = 0.1f;     // In seconds - Quick decay
+    float sustain = 0.5f;   // Level (0.0-1.0) - Medium sustain
+    float release = 0.2f;   // In seconds - Quick release to avoid muddiness
 };
 
 // Voice structure for polyphonic synth
@@ -31,6 +31,8 @@ struct Voice
     EnvelopeState envelopeState = EnvelopeState::Idle;  // Current ADSR state
     float envelopeLevel = 0.0f;           // Current envelope level (0.0-1.0)
     int64_t noteStartTime = 0;            // When the note was triggered
+    float filterState = 0.0f;             // State for the resonant filter
+    float highpassState = 0.0f;           // State for the high-pass filter
     
     // Trigger a new note
     void trigger(int newNote, float newPosition, int newChordPosition)
@@ -42,6 +44,8 @@ struct Voice
         envelopeState = EnvelopeState::Attack;
         envelopeLevel = 0.0f;  // Always start at 0 for proper attack
         phase = 0.0f;          // Reset oscillator phase
+        filterState = 0.0f;    // Reset filter state
+        highpassState = 0.0f;  // Reset high-pass filter state
         noteStartTime = juce::Time::currentTimeMillis();
     }
     

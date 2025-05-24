@@ -93,6 +93,7 @@ private:
         EnvelopeState envelopeState = EnvelopeState::Idle;
         float envelopeLevel = 0.0f;  // Current envelope level
         float filterState = 0.0f;    // Simple one-pole low-pass filter state
+        float highpassState = 0.0f;  // High-pass filter state for removing muddiness
         
         void trigger(int note, float pos, int chordPos = 0) 
         {
@@ -109,6 +110,8 @@ private:
             phase = 0.0f;
             // Reset filter state
             filterState = 0.0f;
+            // Reset high-pass filter state
+            highpassState = 0.0f;
         }
         
         void release() 
@@ -134,6 +137,7 @@ private:
             envelopeState = EnvelopeState::Idle;
             envelopeLevel = 0.0f;
             filterState = 0.0f;
+            highpassState = 0.0f;
         }
         
         // Check if this voice has been playing too long (safety feature)
