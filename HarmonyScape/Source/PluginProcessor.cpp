@@ -4,61 +4,31 @@
 //==============================================================================
 HarmonyScapeAudioProcessor::HarmonyScapeAudioProcessor()
     : AudioProcessor (BusesProperties()
-                      .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                      ),
-      parameters (*this, nullptr, "HarmonyScape",
-                  {
-                      std::make_unique<juce::AudioParameterFloat> ("chordDensity",
-                                                                 "Chord Density",
-                                                                 0.0f,
-                                                                 1.0f,
-                                                                 0.5f),
-                      std::make_unique<juce::AudioParameterFloat> ("spatialWidth",
-                                                                 "Spatial Width",
-                                                                 0.0f,
-                                                                 1.0f,
-                                                                 0.5f),
-                      std::make_unique<juce::AudioParameterChoice> ("waveform",
-                                                                 "Waveform",
-                                                                 juce::StringArray { "Sine", "Saw", "Square", "Triangle" },
-                                                                 0),
-                      std::make_unique<juce::AudioParameterFloat> ("volume",
-                                                                 "Volume",
-                                                                 0.0f,
-                                                                 1.0f,
-                                                                 0.7f),
-                      std::make_unique<juce::AudioParameterFloat> ("attack",
-                                                                 "Attack",
-                                                                 0.001f,
-                                                                 2.0f,
-                                                                 0.15f),
-                      std::make_unique<juce::AudioParameterFloat> ("decay",
-                                                                 "Decay",
-                                                                 0.001f,
-                                                                 2.0f,
-                                                                 0.3f),
-                      std::make_unique<juce::AudioParameterFloat> ("sustain",
-                                                                 "Sustain",
-                                                                 0.0f,
-                                                                 1.0f,
-                                                                 0.8f),
-                      std::make_unique<juce::AudioParameterFloat> ("release",
-                                                                 "Release",
-                                                                 0.001f,
-                                                                 5.0f,
-                                                                 0.3f)
-                  })
+                     .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+                     .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+      parameters (*this, nullptr, "Parameters", createParameterLayout())
 {
+    // Get parameter pointers
     chordDensityParam = parameters.getRawParameterValue("chordDensity");
     spatialWidthParam = parameters.getRawParameterValue("spatialWidth");
     waveformParam = parameters.getRawParameterValue("waveform");
     volumeParam = parameters.getRawParameterValue("volume");
-    
-    // Get ADSR parameters
     attackParam = parameters.getRawParameterValue("attack");
     decayParam = parameters.getRawParameterValue("decay");
     sustainParam = parameters.getRawParameterValue("sustain");
     releaseParam = parameters.getRawParameterValue("release");
+
+    // Get new parameter pointers
+    movementRateParam = parameters.getRawParameterValue("movementRate");
+    movementDepthParam = parameters.getRawParameterValue("movementDepth");
+    heightParam = parameters.getRawParameterValue("height");
+    depthParam = parameters.getRawParameterValue("depth");
+    enableMovementParam = parameters.getRawParameterValue("enableMovement");
+    swingParam = parameters.getRawParameterValue("swing");
+    grooveParam = parameters.getRawParameterValue("groove");
+    shimmerParam = parameters.getRawParameterValue("shimmer");
+    shimmerRateParam = parameters.getRawParameterValue("shimmerRate");
+    enableRhythmParam = parameters.getRawParameterValue("enableRhythm");
 }
 
 HarmonyScapeAudioProcessor::~HarmonyScapeAudioProcessor()
@@ -156,7 +126,6 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     spatialEngine.setChordOutput(chordOutput);
     
     // Combine user input MIDI with generated chord output
-    // This ensures both original notes and harmony are rendered together
     juce::MidiBuffer combinedMidi;
     
     // Add user input MIDI
@@ -183,10 +152,11 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         *releaseParam
     };
     
-    // Apply spatial processing with combined MIDI (user input + generated harmony)
-    spatialEngine.process(buffer, combinedMidi, *spatialWidthParam, waveformType, *volumeParam, adsr);
+    // Apply spatial processing with the original method signature first
+    spatialEngine.process(buffer, combinedMidi, *spatialWidthParam, waveformType, 
+                         *volumeParam, adsr);
     
-    // Get currently sounding notes from the spatial engine - important for visualization
+    // Get currently sounding notes from the spatial engine
     updateActiveVoices(spatialEngine.getActiveVoiceNotes());
 }
 

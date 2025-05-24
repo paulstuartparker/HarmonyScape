@@ -23,7 +23,8 @@ void SpatialEngine::prepare(double newSampleRate, int newSamplesPerBlock)
 
 void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBuffer& midiBuffer, 
                            float spatialWidth, WaveformType waveformType, float volume,
-                           const ADSRParams& adsr)
+                           const ADSRParams& adsr, const SpatialParams& spatialParams,
+                           const RhythmParams& rhythmParams)
 {
     int numSamples = buffer.getNumSamples();
     
@@ -232,7 +233,7 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
             if (adsr.attack > 0.0f)
                 envelopeIncrement = 1.0f / (adsr.attack * static_cast<float>(sampleRate));
             else
-                envelopeIncrement = 1.0f;
+                envelopeIncrement = 1.0f; // Instant attack
             
             if (voice.envelopeLevel >= 1.0f)
             {
@@ -245,7 +246,7 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
             if (adsr.decay > 0.0f)
                 envelopeIncrement = (adsr.sustain - 1.0f) / (adsr.decay * static_cast<float>(sampleRate));
             else
-                envelopeIncrement = adsr.sustain - 1.0f;
+                envelopeIncrement = adsr.sustain - 1.0f; // Instant decay
             
             if (voice.envelopeLevel <= adsr.sustain)
             {
@@ -268,12 +269,12 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
         case Voice::EnvelopeState::Release:
             if (adsr.release > 0.001f)
             {
-                // Fixed release calculation - constant rate based on release time
-                envelopeIncrement = -1.0f / (adsr.release * static_cast<float>(sampleRate));
+                // Calculate release rate to reach 0 from current level
+                envelopeIncrement = -voice.envelopeLevel / (adsr.release * static_cast<float>(sampleRate));
             }
             else
             {
-                envelopeIncrement = -1.0f; // Immediate release
+                envelopeIncrement = -voice.envelopeLevel; // Immediate release
             }
             
             if (voice.envelopeLevel <= 0.0f)
@@ -483,6 +484,65 @@ float SpatialEngine::generateSample(float phase, WaveformType waveformType)
     }
 }
 
+float SpatialEngine::calculateEnhancedPosition(int midiNote, int chordPosition, float width,
+                                             const SpatialParams& spatialParams, float time)
+{
+    // Base position calculation
+    float basePosition = calculatePosition(midiNote, chordPosition, width);
+    
+    if (!spatialParams.enableMovement)
+        return basePosition;
+    
+    // Add movement based on LFO
+    float movement = std::sin(spatialLFO.phase * 2.0f * juce::MathConstants<float>::pi) 
+                    * spatialParams.movementDepth;
+    
+    // Add height influence
+    float heightInfluence = (spatialParams.height - 0.5f) * 0.5f;
+    
+    // Add depth influence
+    float depthInfluence = (spatialParams.depth - 0.5f) * 0.3f;
+    
+    // Combine all factors
+    float finalPosition = basePosition + movement + heightInfluence + depthInfluence;
+    
+    // Ensure we stay within bounds
+    return juce::jlimit(-1.0f, 1.0f, finalPosition);
+}
+
+float SpatialEngine::applyRhythmicTiming(float baseTime, const RhythmParams& rhythmParams)
+{
+    if (!rhythmParams.enableRhythm)
+        return baseTime;
+    
+    float modifiedTime = baseTime;
+    
+    // Apply swing
+    if (rhythmParams.swing > 0.0f)
+    {
+        float swingAmount = rhythmParams.swing * 0.1f; // Max 10% swing
+        float beatPosition = std::fmod(baseTime * 2.0f, 1.0f);
+        if (beatPosition < 0.5f)
+        {
+            modifiedTime += swingAmount * (0.5f - beatPosition);
+        }
+        else
+        {
+            modifiedTime -= swingAmount * (beatPosition - 0.5f);
+        }
+    }
+    
+    // Apply groove
+    if (rhythmParams.groove > 0.0f)
+    {
+        float grooveAmount = rhythmParams.groove * 0.05f; // Max 5% groove
+        float grooveMod = std::sin(grooveLFO.phase * 2.0f * juce::MathConstants<float>::pi) 
+                         * grooveAmount;
+        modifiedTime += grooveMod;
+    }
+    
+    return modifiedTime;
+}
 
 juce::Array<int> SpatialEngine::getActiveVoiceNotes() const
 {

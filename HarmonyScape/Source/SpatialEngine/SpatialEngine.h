@@ -33,6 +33,26 @@ public:
         float release;  // in seconds
     };
 
+    // New spatial movement parameters
+    struct SpatialParams
+    {
+        float movementRate = 0.5f;    // Rate of spatial movement (0.0-1.0)
+        float movementDepth = 0.3f;   // Depth of spatial movement (0.0-1.0)
+        float height = 0.5f;          // Height parameter for 3D positioning (0.0-1.0)
+        float depth = 0.5f;           // Depth parameter for 3D positioning (0.0-1.0)
+        bool enableMovement = true;   // Enable/disable spatial movement
+    };
+
+    // New rhythmic parameters
+    struct RhythmParams
+    {
+        float swing = 0.0f;           // Swing amount (0.0-1.0)
+        float groove = 0.0f;          // Groove amount (0.0-1.0)
+        float shimmer = 0.0f;         // Shimmer effect amount (0.0-1.0)
+        float shimmerRate = 0.5f;     // Rate of shimmer effect (0.0-1.0)
+        bool enableRhythm = true;     // Enable/disable rhythmic effects
+    };
+
     SpatialEngine();
     ~SpatialEngine();
     
@@ -49,10 +69,25 @@ public:
      * @param waveformType The type of waveform to generate
      * @param volume Master volume level (0.0-1.0)
      * @param adsr ADSR envelope parameters
+     * @param spatialParams Spatial movement parameters
+     * @param rhythmParams Rhythmic parameters
      */
     void process(juce::AudioBuffer<float>& buffer, const juce::MidiBuffer& midiBuffer, 
                 float spatialWidth, WaveformType waveformType, float volume,
-                const ADSRParams& adsr);
+                const ADSRParams& adsr, const SpatialParams& spatialParams,
+                const RhythmParams& rhythmParams);
+    
+    // Backward compatible overload without new parameters
+    void process(juce::AudioBuffer<float>& buffer, const juce::MidiBuffer& midiBuffer, 
+                float spatialWidth, WaveformType waveformType, float volume,
+                const ADSRParams& adsr)
+    {
+        // Use default values for new parameters
+        SpatialParams defaultSpatial;
+        RhythmParams defaultRhythm;
+        process(buffer, midiBuffer, spatialWidth, waveformType, volume, adsr, 
+                defaultSpatial, defaultRhythm);
+    }
                 
     /**
      * Get all currently active voice notes (including those in release phase)
@@ -184,6 +219,17 @@ private:
      */
     float generateSample(float phase, WaveformType waveformType);
     
+    /**
+     * Calculate enhanced spatial position with movement
+     */
+    float calculateEnhancedPosition(int midiNote, int chordPosition, float width,
+                                  const SpatialParams& spatialParams, float time);
+
+    /**
+     * Apply rhythmic timing variations
+     */
+    float applyRhythmicTiming(float baseTime, const RhythmParams& rhythmParams);
+    
     // Audio generator state
     std::array<Voice, 16> voices;  // Polyphony of 16 voices
     
@@ -195,4 +241,21 @@ private:
     juce::Array<int> userInputNotes;
     juce::Array<int> generatedNotes;
     juce::MidiBuffer chordOutput;  // Store the last chord output for visualization
+
+    // LFO state for spatial movement
+    struct LFOState
+    {
+        float phase = 0.0f;
+        float rate = 0.5f;
+        float depth = 0.3f;
+    };
+
+    // Multiple LFOs for different modulation types
+    LFOState spatialLFO;
+    LFOState shimmerLFO;
+    LFOState grooveLFO;
+
+    // Time tracking for movement
+    double currentTime = 0.0;
+    double lastProcessTime = 0.0;
 }; 
