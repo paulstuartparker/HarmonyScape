@@ -1,0 +1,43 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o"
+  "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o.d"
+  "CMakeFiles/HarmonyScape.dir/Source/ChordEngine/ChordEngine.cpp.o"
+  "CMakeFiles/HarmonyScape.dir/Source/ChordEngine/ChordEngine.cpp.o.d"
+  "CMakeFiles/HarmonyScape.dir/Source/PluginEditor.cpp.o"
+  "CMakeFiles/HarmonyScape.dir/Source/PluginEditor.cpp.o.d"
+  "CMakeFiles/HarmonyScape.dir/Source/PluginProcessor.cpp.o"
+  "CMakeFiles/HarmonyScape.dir/Source/PluginProcessor.cpp.o.d"
+  "CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.o"
+  "CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.o.d"
+  "HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a"
+  "HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/HarmonyScape.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

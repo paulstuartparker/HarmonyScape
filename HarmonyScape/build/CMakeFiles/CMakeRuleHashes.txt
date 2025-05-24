@@ -1,0 +1,4 @@
+# Hashes of file build rules.
+ec935b4de3bb8d1eefc0e144370ec802 HarmonyScape_artefacts/JuceLibraryCode/HarmonyScape_AU/PkgInfo
+f4bb983d310696a1197e4a463e5cc707 HarmonyScape_artefacts/JuceLibraryCode/HarmonyScape_Standalone/PkgInfo
+5a365482a0b3b07b4ecb8706165f432d HarmonyScape_artefacts/JuceLibraryCode/HarmonyScape_VST3/PkgInfo

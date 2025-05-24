@@ -1,0 +1,36 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# HarmonyScape Project Context
+
+You are assisting with the development of HarmonyScape, a VST/AU plugin that transforms simple chord progressions into rich, spatially-aware harmonic environments. The project combines intelligent chord voicing with spatial audio capabilities and dynamic arrangement features.
+
+## Core Architecture
+- Built on JUCE framework (C++17) for cross-platform compatibility
+- Modular design with clear separation between chord processing, spatial positioning, and UI components
+- Follows MVP development approach with phased feature implementation
+
+## Key Components
+1. **Chord Engine**: Detects & transforms basic chords into rich voicings using music theory principles
+2. **Spatial Engine**: Manages voice positioning across the stereo/3D field
+3. **UI System**: Provides intuitive visualization of harmonic and spatial elements
+
+## Current Priority
+Focus on implementing Phase 1 (MVP) features with proper architecture that allows for future expansion. Ensure modular components can evolve independently without breaking existing functionality.
+
+## Code Quality Requirements
+- Follow modern C++17 practices with JUCE-specific patterns
+- Thoroughly document all public APIs and complex algorithms
+- Write defensively with proper error handling
+- Optimize performance-critical code paths, especially in audio processing
+- Implement thorough unit tests for critical components
+- Create clean, readable UI code following the established design spec
+
+## Performance Expectations
+- Audio processing must be real-time safe
+- UI must remain responsive even during complex operations
+- Memory usage must be carefully managed to avoid allocations in audio thread
+
+Approach each task with urgency and attention to detail. When making architectural decisions, prioritize solutions that balance immediate functionality with long-term extensibility.

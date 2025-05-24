@@ -1,0 +1,272 @@
+#include "PluginProcessor.h"
+#include "PluginEditor.h"
+
+//==============================================================================
+HarmonyScapeAudioProcessor::HarmonyScapeAudioProcessor()
+    : AudioProcessor (BusesProperties()
+                      .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
+                      ),
+      parameters (*this, nullptr, "HarmonyScape",
+                  {
+                      std::make_unique<juce::AudioParameterFloat> ("chordDensity",
+                                                                 "Chord Density",
+                                                                 0.0f,
+                                                                 1.0f,
+                                                                 0.5f),
+                      std::make_unique<juce::AudioParameterFloat> ("spatialWidth",
+                                                                 "Spatial Width",
+                                                                 0.0f,
+                                                                 1.0f,
+                                                                 0.5f),
+                      std::make_unique<juce::AudioParameterChoice> ("waveform",
+                                                                 "Waveform",
+                                                                 juce::StringArray { "Sine", "Saw", "Square", "Triangle" },
+                                                                 0),
+                      std::make_unique<juce::AudioParameterFloat> ("volume",
+                                                                 "Volume",
+                                                                 0.0f,
+                                                                 1.0f,
+                                                                 0.7f),
+                      std::make_unique<juce::AudioParameterFloat> ("attack",
+                                                                 "Attack",
+                                                                 0.001f,
+                                                                 2.0f,
+                                                                 0.01f),
+                      std::make_unique<juce::AudioParameterFloat> ("decay",
+                                                                 "Decay",
+                                                                 0.001f,
+                                                                 2.0f,
+                                                                 0.1f),
+                      std::make_unique<juce::AudioParameterFloat> ("sustain",
+                                                                 "Sustain",
+                                                                 0.0f,
+                                                                 1.0f,
+                                                                 0.7f),
+                      std::make_unique<juce::AudioParameterFloat> ("release",
+                                                                 "Release",
+                                                                 0.001f,
+                                                                 5.0f,
+                                                                 0.2f)
+                  })
+{
+    chordDensityParam = parameters.getRawParameterValue("chordDensity");
+    spatialWidthParam = parameters.getRawParameterValue("spatialWidth");
+    waveformParam = parameters.getRawParameterValue("waveform");
+    volumeParam = parameters.getRawParameterValue("volume");
+    
+    // Get ADSR parameters
+    attackParam = parameters.getRawParameterValue("attack");
+    decayParam = parameters.getRawParameterValue("decay");
+    sustainParam = parameters.getRawParameterValue("sustain");
+    releaseParam = parameters.getRawParameterValue("release");
+}
+
+HarmonyScapeAudioProcessor::~HarmonyScapeAudioProcessor()
+{
+}
+
+//==============================================================================
+const juce::String HarmonyScapeAudioProcessor::getName() const
+{
+    return JucePlugin_Name;
+}
+
+bool HarmonyScapeAudioProcessor::acceptsMidi() const
+{
+    return true;
+}
+
+bool HarmonyScapeAudioProcessor::producesMidi() const
+{
+    return true;
+}
+
+bool HarmonyScapeAudioProcessor::isMidiEffect() const
+{
+    return false;
+}
+
+double HarmonyScapeAudioProcessor::getTailLengthSeconds() const
+{
+    return 0.0;
+}
+
+int HarmonyScapeAudioProcessor::getNumPrograms()
+{
+    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
+                // so this should be at least 1, even if you're not really implementing programs.
+}
+
+int HarmonyScapeAudioProcessor::getCurrentProgram()
+{
+    return 0;
+}
+
+void HarmonyScapeAudioProcessor::setCurrentProgram (int index)
+{
+    // Unused
+    juce::ignoreUnused(index);
+}
+
+const juce::String HarmonyScapeAudioProcessor::getProgramName (int index)
+{
+    // Unused
+    juce::ignoreUnused(index);
+    return {};
+}
+
+void HarmonyScapeAudioProcessor::changeProgramName (int index, const juce::String& newName)
+{
+    // Unused
+    juce::ignoreUnused(index, newName);
+}
+
+//==============================================================================
+void HarmonyScapeAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+{
+    // Initialize engines with current sample rate
+    chordEngine.prepare(sampleRate, samplesPerBlock);
+    spatialEngine.prepare(sampleRate, samplesPerBlock);
+}
+
+void HarmonyScapeAudioProcessor::releaseResources()
+{
+    // When playback stops, you can use this as an opportunity to free up any
+    // spare memory, etc.
+}
+
+bool HarmonyScapeAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+{
+    // We only support stereo output
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+        return false;
+
+    return true;
+}
+
+void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+{
+    // Clear output buffer
+    buffer.clear();
+    
+    // Update user input notes tracking for visualization
+    userInputNotes.clearQuick();
+    for (const auto metadata : midiMessages)
+    {
+        auto message = metadata.getMessage();
+        
+        if (message.isNoteOn())
+        {
+            userInputNotes.addIfNotAlreadyThere(message.getNoteNumber());
+        }
+        else if (message.isNoteOff())
+        {
+            userInputNotes.removeFirstMatchingValue(message.getNoteNumber());
+        }
+    }
+    
+    // Process MIDI messages through chord engine
+    auto chordOutput = chordEngine.processMidi(midiMessages, *chordDensityParam);
+    
+    // Update generated notes tracking for visualization
+    generatedOutputNotes.clearQuick();
+    for (const auto metadata : chordOutput)
+    {
+        auto message = metadata.getMessage();
+        
+        if (message.isNoteOn())
+        {
+            generatedOutputNotes.addIfNotAlreadyThere(message.getNoteNumber());
+        }
+        else if (message.isNoteOff())
+        {
+            generatedOutputNotes.removeFirstMatchingValue(message.getNoteNumber());
+        }
+    }
+    
+    // Convert waveform parameter to enum
+    auto waveformType = static_cast<SpatialEngine::WaveformType>(
+        static_cast<int>(*waveformParam));
+    
+    // Create ADSR parameters
+    SpatialEngine::ADSRParams adsr = {
+        *attackParam,
+        *decayParam,
+        *sustainParam,
+        *releaseParam
+    };
+    
+    // Apply spatial processing with waveform and volume
+    spatialEngine.process(buffer, chordOutput, *spatialWidthParam, waveformType, *volumeParam, adsr);
+    
+    // Get currently sounding notes from the spatial engine - important for visualization
+    updateActiveVoices(spatialEngine.getActiveVoiceNotes());
+}
+
+//==============================================================================
+bool HarmonyScapeAudioProcessor::hasEditor() const
+{
+    return true;
+}
+
+juce::AudioProcessorEditor* HarmonyScapeAudioProcessor::createEditor()
+{
+    return new HarmonyScapeAudioProcessorEditor (*this, parameters);
+}
+
+//==============================================================================
+void HarmonyScapeAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    auto state = parameters.copyState();
+    std::unique_ptr<juce::XmlElement> xml (state.createXml());
+    copyXmlToBinary (*xml, destData);
+}
+
+void HarmonyScapeAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+    
+    if (xmlState.get() != nullptr)
+        if (xmlState->hasTagName (parameters.state.getType()))
+            parameters.replaceState (juce::ValueTree::fromXml (*xmlState));
+}
+
+//==============================================================================
+// This creates new instances of the plugin..
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+{
+    return new HarmonyScapeAudioProcessor();
+}
+
+// Add these methods for keyboard visualization
+juce::Array<int> HarmonyScapeAudioProcessor::getUserInputNotes() const
+{
+    return userInputNotes;
+}
+
+juce::Array<int> HarmonyScapeAudioProcessor::getGeneratedNotes() const
+{
+    return generatedOutputNotes;
+}
+
+// Get notes in release phase that are still sounding
+juce::Array<int> HarmonyScapeAudioProcessor::getReleasingNotes() const
+{
+    return releasingNotes;
+}
+
+// Update information about which notes are currently audible for visualization
+void HarmonyScapeAudioProcessor::updateActiveVoices(const juce::Array<int>& activeVoiceNotes)
+{
+    // Clear the releasing notes array
+    releasingNotes.clearQuick();
+    
+    // For each active voice, check if it's a releasing note (not in userInputNotes or generatedOutputNotes)
+    for (const auto& noteNumber : activeVoiceNotes)
+    {
+        if (!userInputNotes.contains(noteNumber) && !generatedOutputNotes.contains(noteNumber))
+        {
+            releasingNotes.addIfNotAlreadyThere(noteNumber);
+        }
+    }
+} 
