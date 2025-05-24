@@ -38,48 +38,50 @@ juce::MidiBuffer ChordEngine::processMidi(const juce::MidiBuffer& midiMessages, 
         }
     }
     
-    // Detect chord from active notes (now handles single notes too)
-    if (activeNotes.size() >= 1)  // Changed from >= 2 to >= 1
-    {
-        currentChord = detectChord(activeNotes);
-    }
-    else
-    {
-        // Reset if no notes active
-        currentChord = Chord();
-        currentVoicing.clear();
-    }
-    
     // Generate output MIDI buffer with chord voicing
     juce::MidiBuffer outputBuffer;
     
-    // Calculate new voicing BEFORE sending any note-offs
+    // If any notes were released or no notes are active, turn off ALL generated notes
+    if (notesOff.size() > 0 || activeNotes.size() == 0)
+    {
+        // Turn off ALL current voicing notes
+        for (int voiceNote : currentVoicing)
+        {
+            outputBuffer.addEvent(juce::MidiMessage::noteOff(1, voiceNote, 0.0f), 0);
+        }
+        currentVoicing.clear();
+        currentChord = Chord(); // Reset current chord
+        return outputBuffer; // Return early - no new notes to generate
+    }
+    
+    // Detect chord from active notes
+    if (activeNotes.size() >= 1)
+    {
+        currentChord = detectChord(activeNotes);
+    }
+    
+    // Calculate new voicing
     juce::Array<int> newVoicing;
     if (!currentChord.isEmpty())
     {
         newVoicing = generateVoicing(currentChord, densityParam);
-    }
-    
-    // Now handle note-offs intelligently
-    if (notesOff.size() > 0 || activeNotes.size() == 0)
-    {
-        // Turn off ALL current voicing notes if user released any note or no notes are active
+        
+        // Turn off notes that are no longer in the voicing
         for (int voiceNote : currentVoicing)
         {
-            // This note is no longer needed, turn it off
-            outputBuffer.addEvent(juce::MidiMessage::noteOff(1, voiceNote, 0.0f), 0);
+            if (!newVoicing.contains(voiceNote))
+            {
+                outputBuffer.addEvent(juce::MidiMessage::noteOff(1, voiceNote, 0.0f), 0);
+            }
         }
-        currentVoicing.clear();
-    }
-    
-    // Now send note-ons for truly new notes
-    for (int i = 0; i < newVoicing.size(); ++i)
-    {
-        int newNote = newVoicing[i];
-        if (!currentVoicing.contains(newNote))
+        
+        // Turn on new notes in the voicing
+        for (int newNote : newVoicing)
         {
-            // Turn on new notes in the voicing with reduced velocity for generated notes
-            outputBuffer.addEvent(juce::MidiMessage::noteOn(1, newNote, 0.6f), 0);
+            if (!currentVoicing.contains(newNote))
+            {
+                outputBuffer.addEvent(juce::MidiMessage::noteOn(1, newNote, 0.6f), 0);
+            }
         }
     }
     

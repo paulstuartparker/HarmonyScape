@@ -122,16 +122,16 @@ void HarmonyScapeAudioProcessorEditor::paint (juce::Graphics& g)
     g.setFont (24.0f);
     g.drawFittedText ("HarmonyScape", getLocalBounds().removeFromTop(40), juce::Justification::centred, 1);
     
-    // Add version number and build indicator
+    // Draw version number with more space before the colored square
     g.setFont(12.0f);
     g.setColour(juce::Colours::lightgrey);
-    g.drawText(HARMONYSCAPE_VERSION_STRING, getWidth() - 80, 10, 75, 15, juce::Justification::right, false);
+    g.drawText(HARMONYSCAPE_VERSION_STRING, getWidth() - 100, 10, 75, 15, juce::Justification::right, false);
     
-    // Draw build color indicator square for deployment verification
+    // Draw colored square with more space from version number
     g.setColour(juce::Colour::fromFloatRGBA(BUILD_COLOR_R, BUILD_COLOR_G, BUILD_COLOR_B, 1.0f));
-    g.fillRect(getWidth() - 20, 5, 15, 15);
+    g.fillRect(getWidth() - 20, 10, 15, 15);
     g.setColour(juce::Colours::white);
-    g.drawRect(getWidth() - 20, 5, 15, 15, 1);
+    g.drawRect(getWidth() - 20, 10, 15, 15, 1);
     
     // Draw section borders
     g.setColour(juce::Colours::lightgrey);
