@@ -61,12 +61,13 @@ public:
     {
         int midiNote = 60;
         int ribbon = 0;             // Which ribbon this belongs to
-        double startTime = 0.0;     // When to start (in samples)
-        double duration = 0.0;      // How long to play (in samples)
+        int bufferSamplePosition = 0; // Sample position within current buffer (0 to bufferSize)
+        float duration = 0.1f;      // Duration in seconds
         float velocity = 1.0f;      // Note velocity
         float spatialPosition = 0.0f; // Spatial position for this note
         bool active = false;
         int stepIndex = 0;          // Position in arpeggiation sequence
+        bool isNoteOn = true;       // true for note on, false for note off
     };
 
     RibbonEngine();
@@ -142,10 +143,10 @@ private:
                                  float globalRate, double hostTempo, bool sync);
     
     /**
-     * Update ribbon phase and generate new events
+     * Update ribbon phase and generate new events for current buffer
      */
-    void updateRibbonPhase(int ribbonIndex, const RibbonConfig& config,
-                          const juce::Array<int>& chordNotes, int numSamples);
+    juce::Array<RibbonNote> updateRibbonPhase(int ribbonIndex, const RibbonConfig& config,
+                                             const juce::Array<int>& chordNotes, int numSamples);
 
     // Engine state
     double sampleRate = 44100.0;
@@ -163,12 +164,12 @@ private:
         juce::Array<int> sequence;       // Current arpeggiation sequence
         double lastEventTime = 0.0;      // When last note was triggered
         bool active = false;
+        int currentlyPlayingNote = -1;   // Track which note is currently sounding (-1 = none)
+        double noteStartTime = 0.0;      // When current note started
+        double noteEndTime = 0.0;        // When current note should end
     };
     
     std::array<RibbonState, MAX_RIBBONS> ribbonStates;
-    
-    // Scheduled note events
-    juce::Array<RibbonNote> scheduledNotes;
     
     // Timing utilities
     double beatsToSamples(double beats, double bpm) const;

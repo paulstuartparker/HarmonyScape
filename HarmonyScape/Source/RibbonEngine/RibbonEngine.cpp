@@ -37,16 +37,14 @@ juce::Array<RibbonEngine::RibbonNote> RibbonEngine::processChord(const juce::Arr
     // Calculate individual ribbon configurations from master controls
     calculateRibbonConfigurations(ribbonParams);
     
-    // Clear old scheduled notes that have passed
-    scheduledNotes.removeIf([this](const RibbonNote& note) {
-        return note.startTime + note.duration < currentSamplePosition;
-    });
-    
     // Update current chord if it has changed
     if (currentChordNotes != chordNotes)
     {
         setCurrentChord(chordNotes);
     }
+    
+    // Generate note events for this buffer
+    juce::Array<RibbonNote> bufferNotes;
     
     // Process each active ribbon
     int activeCount = juce::jlimit(1, MAX_RIBBONS, ribbonParams.activeRibbons);
@@ -55,22 +53,12 @@ juce::Array<RibbonEngine::RibbonNote> RibbonEngine::processChord(const juce::Arr
     {
         if (ribbonParams.ribbons[i].enabled)
         {
-            updateRibbonPhase(i, ribbonParams.ribbons[i], chordNotes, numSamples);
+            auto ribbonEvents = updateRibbonPhase(i, ribbonParams.ribbons[i], chordNotes, numSamples);
+            bufferNotes.addArray(ribbonEvents);
         }
     }
     
-    // Return notes that should be active in this block
-    juce::Array<RibbonNote> activeNotes;
-    for (const auto& note : scheduledNotes)
-    {
-        if (note.startTime <= currentSamplePosition + numSamples &&
-            note.startTime + note.duration >= currentSamplePosition)
-        {
-            activeNotes.add(note);
-        }
-    }
-    
-    return activeNotes;
+    return bufferNotes;
 }
 
 void RibbonEngine::advanceTime(int numSamples)
@@ -80,24 +68,13 @@ void RibbonEngine::advanceTime(int numSamples)
 
 juce::Array<RibbonEngine::RibbonNote> RibbonEngine::getActiveNotes(int samplePosition) const
 {
-    juce::Array<RibbonNote> activeNotes;
-    
-    for (const auto& note : scheduledNotes)
-    {
-        if (note.startTime <= currentSamplePosition + samplePosition &&
-            note.startTime + note.duration >= currentSamplePosition + samplePosition)
-        {
-            activeNotes.add(note);
-        }
-    }
-    
-    return activeNotes;
+    // This method is no longer needed with the new buffer-based approach
+    return {};
 }
 
 void RibbonEngine::reset()
 {
     currentSamplePosition = 0.0;
-    scheduledNotes.clear();
     
     for (auto& state : ribbonStates)
     {
@@ -105,6 +82,10 @@ void RibbonEngine::reset()
         state.currentStep = 0;
         state.lastEventTime = 0.0;
         state.active = false;
+        state.sequence.clear();
+        state.currentlyPlayingNote = -1;
+        state.noteStartTime = 0.0;
+        state.noteEndTime = 0.0;
     }
 }
 
@@ -131,41 +112,39 @@ juce::Array<int> RibbonEngine::generateArpeggiationSequence(const juce::Array<in
     
     juce::Array<int> sequence;
     auto sortedNotes = chordNotes;
+    sortedNotes.sort();
     
     switch (pattern)
     {
         case RibbonPattern::Up:
-            sortedNotes.sort();
+            // Simple ascending
             sequence = sortedNotes;
             break;
             
         case RibbonPattern::Down:
-            sortedNotes.sort();
-            for (int i = sortedNotes.size() - 1; i >= 0; --i)
+            // Simple descending
+            for (int i = sortedNotes.size() - 1; i >= 0; --i) {
                 sequence.add(sortedNotes[i]);
+            }
             break;
             
         case RibbonPattern::Outside:
             {
-                sortedNotes.sort();
+                // From middle outward
                 int mid = sortedNotes.size() / 2;
                 
-                // Start from middle and work outward
-                if (sortedNotes.size() % 2 == 1)
-                {
+                if (sortedNotes.size() % 2 == 1) {
                     sequence.add(sortedNotes[mid]);
-                    for (int i = 1; i <= mid; ++i)
-                    {
-                        if (mid + i < sortedNotes.size())
+                    for (int i = 1; i <= mid; ++i) {
+                        if (mid + i < sortedNotes.size()) {
                             sequence.add(sortedNotes[mid + i]);
-                        if (mid - i >= 0)
+                        }
+                        if (mid - i >= 0) {
                             sequence.add(sortedNotes[mid - i]);
+                        }
                     }
-                }
-                else
-                {
-                    for (int i = 0; i < mid; ++i)
-                    {
+                } else {
+                    for (int i = 0; i < mid; ++i) {
                         sequence.add(sortedNotes[mid + i]);
                         sequence.add(sortedNotes[mid - 1 - i]);
                     }
@@ -175,40 +154,36 @@ juce::Array<int> RibbonEngine::generateArpeggiationSequence(const juce::Array<in
             
         case RibbonPattern::Inside:
             {
-                sortedNotes.sort();
+                // Edges to center
                 int left = 0, right = sortedNotes.size() - 1;
-                bool addFromLeft = true;
                 
-                while (left <= right)
-                {
-                    if (addFromLeft)
-                        sequence.add(sortedNotes[left++]);
-                    else
+                while (left <= right) {
+                    sequence.add(sortedNotes[left++]);
+                    if (left <= right) {
                         sequence.add(sortedNotes[right--]);
-                    addFromLeft = !addFromLeft;
+                    }
                 }
             }
             break;
             
         case RibbonPattern::Random:
             {
+                // Random order but no excessive repeats
                 sequence = sortedNotes;
                 std::random_device rd;
-                std::mt19937 g(rd() + ribbonIndex); // Add ribbon index for consistency
+                std::mt19937 g(rd() + ribbonIndex * 1000);
                 std::shuffle(sequence.begin(), sequence.end(), g);
             }
             break;
             
         case RibbonPattern::Cascade:
             {
-                sortedNotes.sort();
-                // Create overlapping waves
-                for (int wave = 0; wave < 2; ++wave)
-                {
-                    for (int i = 0; i < sortedNotes.size(); ++i)
-                    {
-                        if ((i + wave) % 2 == 0) // Offset for each wave
-                            sequence.add(sortedNotes[i]);
+                // Step through notes with jumps
+                for (int i = 0; i < sortedNotes.size(); ++i) {
+                    sequence.add(sortedNotes[i]);
+                    // Add octave jump occasionally
+                    if (i % 2 == 1 && i + 1 < sortedNotes.size()) {
+                        sequence.add(sortedNotes[(i + 2) % sortedNotes.size()]);
                     }
                 }
             }
@@ -216,25 +191,28 @@ juce::Array<int> RibbonEngine::generateArpeggiationSequence(const juce::Array<in
             
         case RibbonPattern::Spiral:
             {
-                sortedNotes.sort();
-                // Alternate between low and high, spiraling inward
+                // Alternating low/high
                 juce::Array<int> temp = sortedNotes;
-                bool fromLow = (ribbonIndex % 2 == 0);
+                bool fromLow = true;
                 
-                while (!temp.isEmpty())
-                {
-                    if (fromLow)
-                    {
+                while (!temp.isEmpty()) {
+                    if (fromLow) {
                         sequence.add(temp.removeAndReturn(0));
-                    }
-                    else
-                    {
+                    } else {
                         sequence.add(temp.removeAndReturn(temp.size() - 1));
                     }
                     fromLow = !fromLow;
                 }
             }
             break;
+    }
+    
+    // Ensure minimum length but don't over-repeat
+    if (sequence.size() < 3 && !sortedNotes.isEmpty()) {
+        // Just cycle through the available notes
+        while (sequence.size() < 3) {
+            sequence.add(sortedNotes[sequence.size() % sortedNotes.size()]);
+        }
     }
     
     return sequence;
@@ -289,89 +267,120 @@ double RibbonEngine::calculateNoteStartTime(int stepIndex, const RibbonConfig& c
     return currentSamplePosition + stepIndex * stepDuration + offset;
 }
 
-void RibbonEngine::updateRibbonPhase(int ribbonIndex, const RibbonConfig& config,
-                                    const juce::Array<int>& chordNotes, int numSamples)
+juce::Array<RibbonEngine::RibbonNote> RibbonEngine::updateRibbonPhase(int ribbonIndex, const RibbonConfig& config,
+                                                                   const juce::Array<int>& chordNotes, int numSamples)
 {
+    juce::Array<RibbonNote> bufferEvents;
     auto& state = ribbonStates[ribbonIndex];
     
     if (state.sequence.isEmpty())
     {
         state.sequence = generateArpeggiationSequence(chordNotes, config.pattern, ribbonIndex);
         if (state.sequence.isEmpty())
-            return;
+            return bufferEvents;
             
-        // Initialize timing
-        state.lastEventTime = currentSamplePosition - 10000.0; // Force immediate first note
+        // Initialize timing with per-ribbon offset for cascading
+        double ribbonOffsetSamples = config.offset * sampleRate; // Convert seconds to samples
+        state.lastEventTime = currentSamplePosition - 100000.0 + ribbonOffsetSamples;
+        state.currentlyPlayingNote = -1;
     }
     
-    // Calculate step timing - this is CRITICAL for working arpeggiator
-    double baseRateHz = 1.0 + config.rate * 8.0;  // 1-9 Hz range for clear arpeggiation
+    // Calculate step timing - reasonable rates for rhythmic patterns
+    double baseRateHz = 0.5 + config.rate * 4.0;  // 0.5-4.5 Hz range (2 seconds to 0.22 seconds per note)
     double stepInterval = sampleRate / baseRateHz; // Samples between each step
-    double timeSinceLastStep = currentSamplePosition - state.lastEventTime;
     
-    // Apply offset to stagger ribbons
-    double offsetSamples = config.offset * stepInterval;
-    
-    // Check if it's time for the next step
-    if (timeSinceLastStep >= (stepInterval + offsetSamples))
+    // Check if we need to send note-off for currently playing note
+    if (state.currentlyPlayingNote >= 0)
     {
-        int stepsPerCycle = state.sequence.size();
-        if (stepsPerCycle > 0)
+        double timeSinceNoteStart = currentSamplePosition - state.noteStartTime;
+        if (timeSinceNoteStart >= (state.noteEndTime - state.noteStartTime))
         {
-            // CRITICAL: Remove old notes from THIS ribbon only
-            scheduledNotes.removeIf([ribbonIndex](const RibbonNote& note) {
-                return note.ribbon == ribbonIndex;
-            });
-            
-            // Move to next step in sequence
-            state.currentStep = (state.currentStep + 1) % stepsPerCycle;
-            state.lastEventTime = currentSamplePosition;
-            
-            // Calculate note duration using gate parameter
-            double noteDuration = stepInterval * juce::jlimit(0.1f, 1.0f, config.gate);
-            
-            // Apply swing timing if configured
-            double swingOffset = 0.0;
-            if (config.swing > 0.0f && (state.currentStep % 2 == 1))
+            // Time to turn off the current note
+            for (int sampleInBuffer = 0; sampleInBuffer < numSamples; ++sampleInBuffer)
             {
-                // Apply swing to off-beats (every other note)
-                swingOffset = stepInterval * config.swing * 0.4; // Max 40% swing
+                double currentSample = currentSamplePosition + sampleInBuffer;
+                if (currentSample >= state.noteEndTime && state.currentlyPlayingNote >= 0)
+                {
+                    // Create note-off event
+                    RibbonNote noteOff;
+                    noteOff.midiNote = state.currentlyPlayingNote;
+                    noteOff.ribbon = ribbonIndex;
+                    noteOff.bufferSamplePosition = sampleInBuffer;
+                    noteOff.isNoteOn = false;
+                    noteOff.active = true;
+                    bufferEvents.add(noteOff);
+                    
+                    state.currentlyPlayingNote = -1; // Mark as no note playing
+                    break;
+                }
             }
-            
-            // Create new ribbon note
-            RibbonNote newNote;
-            newNote.midiNote = state.sequence[state.currentStep];
-            newNote.ribbon = ribbonIndex;
-            newNote.startTime = currentSamplePosition + swingOffset;
-            newNote.duration = noteDuration;
-            newNote.stepIndex = state.currentStep;
-            
-            // Calculate velocity with musical dynamics
-            float baseVelocity = config.intensity;
-            
-            // Add slight accent on downbeats (step 0)
-            float accentFactor = (state.currentStep == 0) ? 1.3f : 1.0f;
-            
-            // Add decay over the cycle for natural phrasing
-            float cyclePosition = static_cast<float>(state.currentStep) / stepsPerCycle;
-            float decayFactor = 1.0f - (cyclePosition * (1.0f - config.decay));
-            
-            // Slight humanization but keep it musical
-            float humanization = 0.9f + (std::sin(state.currentStep * 1.1f) * 0.1f);
-            
-            newNote.velocity = juce::jlimit(0.2f, 1.0f, 
-                baseVelocity * accentFactor * decayFactor * humanization);
-            
-            // Calculate spatial position
-            newNote.spatialPosition = calculateRibbonSpatialPosition(
-                state.currentStep, stepsPerCycle, config, 0.5f);
-            
-            newNote.active = true;
-            
-            // Add the note to scheduled events
-            scheduledNotes.add(newNote);
         }
     }
+    
+    // Check each sample in this buffer to see if we should trigger a new note
+    for (int sampleInBuffer = 0; sampleInBuffer < numSamples; ++sampleInBuffer)
+    {
+        double currentSample = currentSamplePosition + sampleInBuffer;
+        double timeSinceLastEvent = currentSample - state.lastEventTime;
+        
+        // Check if it's time for the next step AND no note is currently playing
+        if (timeSinceLastEvent >= stepInterval && state.currentlyPlayingNote < 0)
+        {
+            int stepsPerCycle = state.sequence.size();
+            if (stepsPerCycle > 0)
+            {
+                // Move to next step in sequence
+                state.currentStep = (state.currentStep + 1) % stepsPerCycle;
+                state.lastEventTime = currentSample;
+                
+                // Apply swing timing
+                int swingDelay = 0;
+                if (config.swing > 0.0f && (state.currentStep % 2 == 1))
+                {
+                    swingDelay = static_cast<int>(stepInterval * config.swing * 0.2); // Max 20% swing
+                }
+                
+                // Calculate when this note should actually trigger
+                int triggerSample = sampleInBuffer + swingDelay;
+                if (triggerSample < numSamples)
+                {
+                    // Create note-on event
+                    RibbonNote noteOn;
+                    noteOn.midiNote = state.sequence[state.currentStep];
+                    noteOn.ribbon = ribbonIndex;
+                    noteOn.bufferSamplePosition = triggerSample;
+                    noteOn.isNoteOn = true;
+                    noteOn.stepIndex = state.currentStep;
+                    
+                    // Calculate velocity with dynamics
+                    float baseVelocity = config.intensity;
+                    float accentFactor = (state.currentStep == 0) ? 1.3f : 1.0f; // Accent on downbeat
+                    float ribbonCharacter = 0.7f + (ribbonIndex * 0.06f); // Each ribbon slightly different
+                    
+                    noteOn.velocity = juce::jlimit(0.5f, 0.95f, 
+                        baseVelocity * accentFactor * ribbonCharacter);
+                    
+                    // Calculate note duration - USING PROPER GATE!
+                    double noteDurationSamples = stepInterval * config.gate; // Gate is 10-50% of interval
+                    noteOn.duration = noteDurationSamples / sampleRate; // Convert to seconds for display
+                    
+                    // Track this note as currently playing
+                    state.currentlyPlayingNote = noteOn.midiNote;
+                    state.noteStartTime = currentSample;
+                    state.noteEndTime = currentSample + noteDurationSamples;
+                    
+                    // Calculate spatial position for this ribbon
+                    float ribbonSpatialBase = (static_cast<float>(ribbonIndex) / (MAX_RIBBONS - 1)) * 2.0f - 1.0f;
+                    noteOn.spatialPosition = ribbonSpatialBase * 0.8f; // Each ribbon owns 80% of its space
+                    
+                    noteOn.active = true;
+                    bufferEvents.add(noteOn);
+                }
+            }
+        }
+    }
+    
+    return bufferEvents;
 }
 
 double RibbonEngine::beatsToSamples(double beats, double bpm) const
@@ -406,30 +415,35 @@ void RibbonEngine::calculateRibbonConfigurations(RibbonParams& params)
         
         if (!ribbon.enabled) continue;
         
-        // PULSE affects rate - higher pulse = faster arpeggiation
-        float baseRate = 0.2f + params.pulse * 0.8f;  // 0.2 to 1.0 range
+        // PULSE affects rate - slower for clarity but still rhythmic
+        float baseRate = 0.15f + params.pulse * 0.5f;  // 0.15 to 0.65 range
         
-        // VARIATION affects how different each ribbon is
-        float variationFactor = 1.0f + (params.variation - 0.5f) * 2.0f * (i * 0.2f);
+        // VARIATION creates differences between ribbons
+        float variationFactor = 0.8f + (params.variation * 0.8f) + (i * 0.2f);
         ribbon.rate = juce::jlimit(0.1f, 1.0f, baseRate * variationFactor);
         
-        // WOBBLE affects timing offset and spatial spread
-        ribbon.offset = params.wobble * (i * 0.25f);  // Stagger the ribbons
-        ribbon.spatialSpread = 0.3f + params.wobble * 0.7f;
+        // WOBBLE creates staggering between ribbons for cascading
+        float baseOffset = i * 0.5f; // Base 0.5 second separation between ribbons
+        float wobbleOffset = params.wobble * (i * 1.0f); // Up to 1 second extra per ribbon
+        ribbon.offset = baseOffset + wobbleOffset;  // Ribbons start 0.5-3.5 seconds apart
+        
+        // Spatial spread - each ribbon has its own position
+        ribbon.spatialSpread = 0.3f + (i * 0.15f) + (params.wobble * 0.3f);
         
         // SWING is applied globally to all ribbons
         ribbon.swing = params.swing;
         
-        // SHIMMER affects intensity variation and decay
-        float shimmerVariation = 1.0f + (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * params.shimmer;
-        ribbon.intensity = juce::jlimit(0.3f, 1.0f, 0.7f * shimmerVariation);
-        ribbon.decay = 0.6f + params.shimmer * 0.4f;  // More shimmer = less decay
+        // SHIMMER affects intensity
+        float shimmerVariation = 0.8f + (static_cast<float>(std::rand()) / RAND_MAX * 0.4f) * params.shimmer;
+        ribbon.intensity = juce::jlimit(0.6f, 1.0f, shimmerVariation);
+        ribbon.decay = 0.9f; // High decay to maintain note clarity
         
-        // GATE is controlled by pulse (faster pulse = shorter gates for clarity)
-        ribbon.gate = 0.9f - params.pulse * 0.4f;  // 0.9 to 0.5 range
+        // GATE - MUCH SHORTER for distinct notes! This is KEY!
+        // Gate should be 10-50% of the interval for clear rhythmic patterns
+        ribbon.gate = 0.1f + params.pulse * 0.4f;  // 0.1 to 0.5 range (10-50% of interval)
         
-        // PATTERN selection based on variation and ribbon index
-        int patternIndex = (i + static_cast<int>(params.variation * 7.0f)) % 7;
+        // PATTERN selection - ensure each ribbon gets different patterns
+        int patternIndex = (i * 2 + static_cast<int>(params.variation * 7.0f)) % 7;
         ribbon.pattern = static_cast<RibbonPattern>(patternIndex);
     }
 } 

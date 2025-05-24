@@ -178,40 +178,32 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         auto ribbonNotes = ribbonEngine.processChord(currentChordNotes, ribbonParams, 
                                                     buffer.getNumSamples(), 120.0);
         
-        // Convert ribbon notes to MIDI events with sample-accurate timing
+        // Convert ribbon notes to MIDI events - NOW WITH CORRECT TIMING!
         for (const auto& ribbonNote : ribbonNotes)
         {
             if (ribbonNote.active)
             {
-                double samplesPerSecond = getSampleRate();
-                double currentTimeInSamples = ribbonEngine.getCurrentTime();
-                double noteStartSample = ribbonNote.startTime - currentTimeInSamples;
+                // Use the buffer-relative sample position directly
+                int samplePosition = ribbonNote.bufferSamplePosition;
                 
-                // Only add notes that start within this buffer
-                if (noteStartSample >= 0 && noteStartSample < buffer.getNumSamples())
+                // Ensure sample position is within buffer bounds
+                samplePosition = juce::jlimit(0, buffer.getNumSamples() - 1, samplePosition);
+                
+                if (ribbonNote.isNoteOn)
                 {
-                    int samplePosition = static_cast<int>(noteStartSample);
-                    
-                    // Use appropriate velocity for audible arpeggiation
+                    // Note ON event
                     float ribbonVelocity = juce::jlimit(0.4f, 0.9f, ribbonNote.velocity);
-                    
                     auto noteOnMsg = juce::MidiMessage::noteOn(1, ribbonNote.midiNote, ribbonVelocity);
                     ribbonMidi.addEvent(noteOnMsg, samplePosition);
                     
                     // Track this note for keyboard visualization
                     activeRibbonNotes.addIfNotAlreadyThere(ribbonNote.midiNote);
-                    
-                    // Calculate note duration for clean arpeggiation
-                    double noteDurationSeconds = ribbonNote.duration / samplesPerSecond;
-                    int noteDurationSamples = static_cast<int>(ribbonNote.duration);
-                    
-                    // Schedule note off within buffer if duration allows
-                    int noteOffSample = samplePosition + noteDurationSamples;
-                    if (noteOffSample < buffer.getNumSamples())
-                    {
-                        auto noteOffMsg = juce::MidiMessage::noteOff(1, ribbonNote.midiNote);
-                        ribbonMidi.addEvent(noteOffMsg, noteOffSample);
-                    }
+                }
+                else
+                {
+                    // Note OFF event
+                    auto noteOffMsg = juce::MidiMessage::noteOff(1, ribbonNote.midiNote);
+                    ribbonMidi.addEvent(noteOffMsg, samplePosition);
                 }
             }
         }
