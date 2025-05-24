@@ -128,10 +128,24 @@ CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.s: cmake_forc
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.s"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/SpatialEngine.cpp -o CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.s
 
+CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o: CMakeFiles/HarmonyScape.dir/flags.make
+CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o: /Users/paulparker/projects/vstproject/HarmonyScape/Source/RibbonEngine/RibbonEngine.cpp
+CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o"
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o -MF CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o.d -o CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o -c /Users/paulparker/projects/vstproject/HarmonyScape/Source/RibbonEngine/RibbonEngine.cpp
+
+CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.i"
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/paulparker/projects/vstproject/HarmonyScape/Source/RibbonEngine/RibbonEngine.cpp > CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.i
+
+CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.s"
+	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/paulparker/projects/vstproject/HarmonyScape/Source/RibbonEngine/RibbonEngine.cpp -o CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.s
+
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.i: cmake_force
@@ -145,7 +159,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_proces
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.i: cmake_force
@@ -159,7 +173,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_proces
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_processors/juce_audio_processors.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_processors/juce_audio_processors.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.i: cmake_force
@@ -173,7 +187,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_proces
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_gui_extra/juce_gui_extra.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_gui_extra/juce_gui_extra.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.i: cmake_force
@@ -187,7 +201,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_extra/juce_gui_extra.mm.s: cma
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_gui_basics/juce_gui_basics.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_gui_basics/juce_gui_basics.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.i: cmake_force
@@ -201,7 +215,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_gui_basics/juce_gui_basics.mm.s: c
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_graphics/juce_graphics.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_graphics/juce_graphics.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.i: cmake_force
@@ -215,7 +229,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_graphics/juce_graphics.mm.s: cmake
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_events/juce_events.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_events/juce_events.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.i: cmake_force
@@ -229,7 +243,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_events/juce_events.mm.s: cmake_for
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_core/juce_core.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_core/juce_core.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.i: cmake_force
@@ -243,7 +257,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_core/juce_core.mm.s: cmake_force
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_data_structures/juce_data_structures.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_data_structures/juce_data_structures.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.i: cmake_force
@@ -257,7 +271,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_data_structures/juce_data_structur
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_basics/juce_audio_basics.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_basics/juce_audio_basics.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.i: cmake_force
@@ -271,7 +285,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_utils/juce_audio_utils.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_utils/juce_audio_utils.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.i: cmake_force
@@ -285,7 +299,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_utils/juce_audio_utils.mm.s:
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_formats/juce_audio_formats.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_formats/juce_audio_formats.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.mm.i: cmake_force
@@ -299,7 +313,7 @@ CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_formats/juce_audio_formats.m
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o: CMakeFiles/HarmonyScape.dir/flags.make
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o: /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_devices/juce_audio_devices.mm
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o: CMakeFiles/HarmonyScape.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o"
 	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o -MF CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o.d -o CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o -c /Users/paulparker/projects/vstproject/HarmonyScape/JUCE/modules/juce_audio_devices/juce_audio_devices.mm
 
 CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.i: cmake_force
@@ -316,6 +330,7 @@ HarmonyScape_OBJECTS = \
 "CMakeFiles/HarmonyScape.dir/Source/PluginEditor.cpp.o" \
 "CMakeFiles/HarmonyScape.dir/Source/ChordEngine/ChordEngine.cpp.o" \
 "CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.o" \
+"CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o" \
 "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o" \
 "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o" \
 "CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o" \
@@ -337,6 +352,7 @@ HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyS
 HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/Source/PluginEditor.cpp.o
 HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/Source/ChordEngine/ChordEngine.cpp.o
 HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.o
+HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o
 HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o
 HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o
 HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_processors/juce_audio_processors.mm.o
@@ -352,7 +368,7 @@ HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyS
 HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/JUCE/modules/juce_audio_devices/juce_audio_devices.mm.o
 HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/build.make
 HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a: CMakeFiles/HarmonyScape.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Linking CXX static library HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/paulparker/projects/vstproject/HarmonyScape/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Linking CXX static library HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/HarmonyScape.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/HarmonyScape.dir/link.txt --verbose=$(VERBOSE)
 

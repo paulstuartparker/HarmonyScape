@@ -29,6 +29,7 @@ target_sources(HarmonyScape PRIVATE
     Source/PluginEditor.cpp
     Source/ChordEngine/ChordEngine.cpp
     Source/SpatialEngine/SpatialEngine.cpp
+    Source/RibbonEngine/RibbonEngine.cpp
 )
 
 # Add binary data

@@ -5,7 +5,7 @@
 
 //==============================================================================
 /**
- * HarmonyScape plugin editor with basic UI controls
+ * HarmonyScape plugin editor with enhanced UI controls for ribbons and spatial features
  */
 class HarmonyScapeAudioProcessorEditor  : public juce::AudioProcessorEditor,
                                           private juce::Timer
@@ -22,6 +22,13 @@ public:
     void timerCallback() override;
 
 private:
+    // Setup methods for UI components
+    void setupRibbonControls();
+    void setupSpatialControls();
+    void createParameterAttachments();
+    void layoutRibbonControls();
+    void layoutSpatialControls();
+    
     // Reference to our processor
     HarmonyScapeAudioProcessor& audioProcessor;
     
@@ -59,7 +66,46 @@ private:
     juce::Label sustainLabel;
     juce::Label releaseLabel;
     
-    // Parameter attachments
+    // New UI Components - Ribbon Controls
+    juce::ToggleButton enableRibbonsButton;
+    juce::Label ribbonsLabel;
+    juce::Label ribbonsHeaderLabel;
+    juce::Slider ribbonCountSlider;
+    juce::Label ribbonCountLabel;
+    juce::Slider ribbonRateSlider;
+    juce::Label ribbonRateLabel;
+    juce::Slider ribbonSpreadSlider;
+    juce::Label ribbonSpreadLabel;
+    juce::Slider ribbonIntensitySlider;
+    juce::Label ribbonIntensityLabel;
+    
+    // Individual ribbon controls (first 3)
+    struct RibbonControlSet
+    {
+        juce::ToggleButton enableButton;
+        juce::ComboBox patternCombo;
+        juce::Slider rateSlider;
+        juce::Slider offsetSlider;
+        juce::Label titleLabel;
+        juce::Label patternLabel;
+        juce::Label rateLabel;
+        juce::Label offsetLabel;
+    };
+    std::array<RibbonControlSet, 3> ribbonControls;
+    
+    // Enhanced spatial controls
+    juce::ToggleButton enableMovementButton;
+    juce::Label movementLabel;
+    juce::Slider movementRateSlider;
+    juce::Label movementRateLabel;
+    juce::Slider movementDepthSlider;
+    juce::Label movementDepthLabel;
+    juce::Slider heightSlider;
+    juce::Label heightLabel;
+    juce::Slider depthSlider;
+    juce::Label depthLabel;
+    
+    // Parameter attachments - Core
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> chordDensityAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> spatialWidthAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> waveformAttachment;
@@ -68,6 +114,30 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> decayAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sustainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> releaseAttachment;
+    
+    // Parameter attachments - Ribbons
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> enableRibbonsAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ribbonCountAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ribbonRateAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ribbonSpreadAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ribbonIntensityAttachment;
+    
+    // Individual ribbon attachments
+    struct RibbonAttachmentSet
+    {
+        std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> enableAttachment;
+        std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patternAttachment;
+        std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> rateAttachment;
+        std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> offsetAttachment;
+    };
+    std::array<RibbonAttachmentSet, 3> ribbonAttachments;
+    
+    // Parameter attachments - Enhanced Spatial
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> enableMovementAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> movementRateAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> movementDepthAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> heightAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> depthAttachment;
     
     // Custom MidiKeyboardComponent that shows different colors for user and generated notes
     class CustomMidiKeyboard : public juce::MidiKeyboardComponent
@@ -252,6 +322,84 @@ private:
     };
     
     ADSRVisualizer adsrVisualizer;
+    
+    // New Spatial Visualizer Component
+    class SpatialVisualizer : public juce::Component
+    {
+    public:
+        SpatialVisualizer() {}
+        
+        void setSpatialParams(float width, float height, float depth, bool movement)
+        {
+            spatialWidth = width;
+            spatialHeight = height;
+            spatialDepth = depth;
+            movementEnabled = movement;
+            repaint();
+        }
+        
+        void paint(juce::Graphics& g) override
+        {
+            auto bounds = getLocalBounds().reduced(5);
+            
+            // Background
+            g.setColour(juce::Colours::black.withAlpha(0.7f));
+            g.fillRoundedRectangle(bounds.toFloat(), 3.0f);
+            
+            // Border
+            g.setColour(juce::Colours::grey.withAlpha(0.5f));
+            g.drawRoundedRectangle(bounds.toFloat(), 3.0f, 1.0f);
+            
+            // Draw spatial field representation
+            auto fieldBounds = bounds.reduced(10);
+            
+            // Center point
+            float centerX = fieldBounds.getCentreX();
+            float centerY = fieldBounds.getCentreY();
+            
+            // Draw width indication
+            float widthSpan = fieldBounds.getWidth() * spatialWidth;
+            g.setColour(juce::Colours::cyan.withAlpha(0.6f));
+            g.drawHorizontalLine(static_cast<int>(centerY), 
+                               centerX - widthSpan/2, centerX + widthSpan/2);
+            
+            // Draw height indication
+            float heightSpan = fieldBounds.getHeight() * spatialHeight;
+            g.setColour(juce::Colours::yellow.withAlpha(0.6f));
+            g.drawVerticalLine(static_cast<int>(centerX), 
+                             centerY - heightSpan/2, centerY + heightSpan/2);
+            
+            // Draw depth indication (as circles)
+            g.setColour(juce::Colours::magenta.withAlpha(0.4f));
+            float depthRadius = 20.0f * spatialDepth;
+            g.drawEllipse(centerX - depthRadius, centerY - depthRadius, 
+                         depthRadius * 2, depthRadius * 2, 1.0f);
+            
+            // Movement indicator
+            if (movementEnabled)
+            {
+                g.setColour(juce::Colours::white.withAlpha(0.8f));
+                g.fillEllipse(centerX - 3, centerY - 3, 6, 6);
+                
+                // Draw movement arrows
+                g.drawArrow(juce::Line<float>(centerX - 15, centerY, centerX + 15, centerY), 
+                           1.0f, 6.0f, 4.0f);
+            }
+            
+            // Labels
+            g.setColour(juce::Colours::lightgrey);
+            g.setFont(9.0f);
+            g.drawText("Spatial Field", bounds.getX() + 5, bounds.getY() + 2, 80, 12, juce::Justification::left);
+        }
+        
+    private:
+        float spatialWidth = 0.5f;
+        float spatialHeight = 0.5f;
+        float spatialDepth = 0.5f;
+        bool movementEnabled = false;
+    };
+    
+    SpatialVisualizer spatialVisualizer;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HarmonyScapeAudioProcessorEditor)
 }; 

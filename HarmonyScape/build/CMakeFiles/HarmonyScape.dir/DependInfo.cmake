@@ -24,6 +24,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/paulparker/projects/vstproject/HarmonyScape/Source/ChordEngine/ChordEngine.cpp" "CMakeFiles/HarmonyScape.dir/Source/ChordEngine/ChordEngine.cpp.o" "gcc" "CMakeFiles/HarmonyScape.dir/Source/ChordEngine/ChordEngine.cpp.o.d"
   "/Users/paulparker/projects/vstproject/HarmonyScape/Source/PluginEditor.cpp" "CMakeFiles/HarmonyScape.dir/Source/PluginEditor.cpp.o" "gcc" "CMakeFiles/HarmonyScape.dir/Source/PluginEditor.cpp.o.d"
   "/Users/paulparker/projects/vstproject/HarmonyScape/Source/PluginProcessor.cpp" "CMakeFiles/HarmonyScape.dir/Source/PluginProcessor.cpp.o" "gcc" "CMakeFiles/HarmonyScape.dir/Source/PluginProcessor.cpp.o.d"
+  "/Users/paulparker/projects/vstproject/HarmonyScape/Source/RibbonEngine/RibbonEngine.cpp" "CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o" "gcc" "CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o.d"
   "/Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/SpatialEngine.cpp" "CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.o" "gcc" "CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.o.d"
   )
 

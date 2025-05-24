@@ -978,6 +978,30 @@ Source/PluginProcessor.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/HarmonyScape.dir/build.make CMakeFiles/HarmonyScape.dir/Source/PluginProcessor.cpp.s
 .PHONY : Source/PluginProcessor.cpp.s
 
+Source/RibbonEngine/RibbonEngine.o: Source/RibbonEngine/RibbonEngine.cpp.o
+.PHONY : Source/RibbonEngine/RibbonEngine.o
+
+# target to build an object file
+Source/RibbonEngine/RibbonEngine.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HarmonyScape.dir/build.make CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o
+.PHONY : Source/RibbonEngine/RibbonEngine.cpp.o
+
+Source/RibbonEngine/RibbonEngine.i: Source/RibbonEngine/RibbonEngine.cpp.i
+.PHONY : Source/RibbonEngine/RibbonEngine.i
+
+# target to preprocess a source file
+Source/RibbonEngine/RibbonEngine.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HarmonyScape.dir/build.make CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.i
+.PHONY : Source/RibbonEngine/RibbonEngine.cpp.i
+
+Source/RibbonEngine/RibbonEngine.s: Source/RibbonEngine/RibbonEngine.cpp.s
+.PHONY : Source/RibbonEngine/RibbonEngine.s
+
+# target to generate assembly for a file
+Source/RibbonEngine/RibbonEngine.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HarmonyScape.dir/build.make CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.s
+.PHONY : Source/RibbonEngine/RibbonEngine.cpp.s
+
 Source/SpatialEngine/SpatialEngine.o: Source/SpatialEngine/SpatialEngine.cpp.o
 .PHONY : Source/SpatialEngine/SpatialEngine.o
 
@@ -1104,6 +1128,9 @@ help:
 	@echo "... Source/PluginProcessor.o"
 	@echo "... Source/PluginProcessor.i"
 	@echo "... Source/PluginProcessor.s"
+	@echo "... Source/RibbonEngine/RibbonEngine.o"
+	@echo "... Source/RibbonEngine/RibbonEngine.i"
+	@echo "... Source/RibbonEngine/RibbonEngine.s"
 	@echo "... Source/SpatialEngine/SpatialEngine.o"
 	@echo "... Source/SpatialEngine/SpatialEngine.i"
 	@echo "... Source/SpatialEngine/SpatialEngine.s"

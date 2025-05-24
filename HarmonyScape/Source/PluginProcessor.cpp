@@ -8,7 +8,7 @@ HarmonyScapeAudioProcessor::HarmonyScapeAudioProcessor()
                      .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
       parameters (*this, nullptr, "Parameters", createParameterLayout())
 {
-    // Get parameter pointers
+    // Get core parameter pointers
     chordDensityParam = parameters.getRawParameterValue("chordDensity");
     spatialWidthParam = parameters.getRawParameterValue("spatialWidth");
     waveformParam = parameters.getRawParameterValue("waveform");
@@ -18,12 +18,31 @@ HarmonyScapeAudioProcessor::HarmonyScapeAudioProcessor()
     sustainParam = parameters.getRawParameterValue("sustain");
     releaseParam = parameters.getRawParameterValue("release");
 
-    // Get new parameter pointers
+    // Get enhanced spatial parameter pointers
     movementRateParam = parameters.getRawParameterValue("movementRate");
     movementDepthParam = parameters.getRawParameterValue("movementDepth");
     heightParam = parameters.getRawParameterValue("height");
     depthParam = parameters.getRawParameterValue("depth");
     enableMovementParam = parameters.getRawParameterValue("enableMovement");
+    
+    // Get ribbon parameter pointers
+    enableRibbonsParam = parameters.getRawParameterValue("enableRibbons");
+    ribbonCountParam = parameters.getRawParameterValue("ribbonCount");
+    ribbonRateParam = parameters.getRawParameterValue("ribbonRate");
+    ribbonSpreadParam = parameters.getRawParameterValue("ribbonSpread");
+    ribbonIntensityParam = parameters.getRawParameterValue("ribbonIntensity");
+    
+    // Get individual ribbon parameter pointers
+    for (int i = 0; i < 3; ++i)
+    {
+        juce::String prefix = "ribbon" + juce::String(i + 1);
+        ribbonParams[i].enable = parameters.getRawParameterValue(prefix + "Enable");
+        ribbonParams[i].pattern = parameters.getRawParameterValue(prefix + "Pattern");
+        ribbonParams[i].rate = parameters.getRawParameterValue(prefix + "Rate");
+        ribbonParams[i].offset = parameters.getRawParameterValue(prefix + "Offset");
+    }
+    
+    // Get legacy rhythmic parameter pointers
     swingParam = parameters.getRawParameterValue("swing");
     grooveParam = parameters.getRawParameterValue("groove");
     shimmerParam = parameters.getRawParameterValue("shimmer");
@@ -94,15 +113,17 @@ void HarmonyScapeAudioProcessor::changeProgramName (int index, const juce::Strin
 //==============================================================================
 void HarmonyScapeAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Initialize engines with current sample rate
+    // Initialize all engines with current sample rate
     chordEngine.prepare(sampleRate, samplesPerBlock);
     spatialEngine.prepare(sampleRate, samplesPerBlock);
+    ribbonEngine.prepare(sampleRate, samplesPerBlock);
 }
 
 void HarmonyScapeAudioProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
+    ribbonEngine.reset();
 }
 
 bool HarmonyScapeAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -125,7 +146,65 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Store the chord output in the spatial engine for visualization
     spatialEngine.setChordOutput(chordOutput);
     
-    // Combine user input MIDI with generated chord output
+    // Get current chord notes for ribbon processing
+    juce::Array<int> currentChordNotes;
+    for (const auto metadata : chordOutput)
+    {
+        auto message = metadata.getMessage();
+        if (message.isNoteOn())
+        {
+            currentChordNotes.addIfNotAlreadyThere(message.getNoteNumber());
+        }
+    }
+    
+    // Create ribbon parameters structure
+    RibbonEngine::RibbonParams ribbonParams;
+    ribbonParams.enableRibbons = *enableRibbonsParam > 0.5f;
+    ribbonParams.activeRibbons = static_cast<int>(*ribbonCountParam);
+    ribbonParams.globalRate = *ribbonRateParam;
+    ribbonParams.spatialMovement = *ribbonSpreadParam;
+    
+    // Configure individual ribbons
+    for (int i = 0; i < 3; ++i)
+    {
+        ribbonParams.ribbons[i].enabled = *this->ribbonParams[i].enable > 0.5f;
+        ribbonParams.ribbons[i].pattern = static_cast<RibbonEngine::RibbonPattern>(
+            static_cast<int>(*this->ribbonParams[i].pattern));
+        ribbonParams.ribbons[i].rate = *this->ribbonParams[i].rate;
+        ribbonParams.ribbons[i].offset = *this->ribbonParams[i].offset;
+        ribbonParams.ribbons[i].intensity = *ribbonIntensityParam;
+        ribbonParams.ribbons[i].spatialSpread = *ribbonSpreadParam;
+    }
+    
+    // Process ribbons if enabled
+    juce::MidiBuffer ribbonMidi;
+    if (ribbonParams.enableRibbons && !currentChordNotes.isEmpty())
+    {
+        auto ribbonNotes = ribbonEngine.processChord(currentChordNotes, ribbonParams, 
+                                                    buffer.getNumSamples(), 120.0);
+        
+        // Convert ribbon notes to MIDI events
+        for (const auto& ribbonNote : ribbonNotes)
+        {
+            if (ribbonNote.active)
+            {
+                auto noteOnMsg = juce::MidiMessage::noteOn(1, ribbonNote.midiNote, 
+                                                          ribbonNote.velocity);
+                ribbonMidi.addEvent(noteOnMsg, 0); // Add at start of buffer
+                
+                // Schedule note off (simplified for now)
+                auto noteOffMsg = juce::MidiMessage::noteOff(1, ribbonNote.midiNote);
+                int noteOffSample = juce::jmin(buffer.getNumSamples() - 1,
+                                             static_cast<int>(ribbonNote.duration / 44100.0 * getSampleRate()));
+                ribbonMidi.addEvent(noteOffMsg, noteOffSample);
+            }
+        }
+    }
+    
+    // Advance ribbon engine time
+    ribbonEngine.advanceTime(buffer.getNumSamples());
+    
+    // Combine all MIDI sources
     juce::MidiBuffer combinedMidi;
     
     // Add user input MIDI
@@ -136,6 +215,12 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     
     // Add generated chord harmony
     for (const auto metadata : chordOutput)
+    {
+        combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
+    }
+    
+    // Add ribbon MIDI
+    for (const auto metadata : ribbonMidi)
     {
         combinedMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
     }
@@ -152,9 +237,25 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         *releaseParam
     };
     
-    // Apply spatial processing with the original method signature first
+    // Create enhanced spatial parameters
+    SpatialEngine::SpatialParams spatialParams;
+    spatialParams.movementRate = *movementRateParam;
+    spatialParams.movementDepth = *movementDepthParam;
+    spatialParams.height = *heightParam;
+    spatialParams.depth = *depthParam;
+    spatialParams.enableMovement = *enableMovementParam > 0.5f;
+    
+    // Create rhythm parameters
+    SpatialEngine::RhythmParams rhythmParams;
+    rhythmParams.swing = *swingParam;
+    rhythmParams.groove = *grooveParam;
+    rhythmParams.shimmer = *shimmerParam;
+    rhythmParams.shimmerRate = *shimmerRateParam;
+    rhythmParams.enableRhythm = *enableRhythmParam > 0.5f;
+    
+    // Apply spatial processing with enhanced parameters
     spatialEngine.process(buffer, combinedMidi, *spatialWidthParam, waveformType, 
-                         *volumeParam, adsr);
+                         *volumeParam, adsr, spatialParams, rhythmParams);
     
     // Get currently sounding notes from the spatial engine
     updateActiveVoices(spatialEngine.getActiveVoiceNotes());

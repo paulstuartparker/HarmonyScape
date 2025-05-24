@@ -1543,4 +1543,6 @@ CMakeFiles/HarmonyScape.dir/Source/PluginProcessor.cpp.o: \
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/SpatialEngine.h \
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/../JuceHeader.h \
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/SpatialEngine/../Voice.h \
+  /Users/paulparker/projects/vstproject/HarmonyScape/Source/RibbonEngine/RibbonEngine.h \
+  /Users/paulparker/projects/vstproject/HarmonyScape/Source/RibbonEngine/../JuceHeader.h \
   /Users/paulparker/projects/vstproject/HarmonyScape/Source/PluginEditor.h

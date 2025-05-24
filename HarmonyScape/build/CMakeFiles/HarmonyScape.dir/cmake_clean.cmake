@@ -31,6 +31,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/HarmonyScape.dir/Source/PluginEditor.cpp.o.d"
   "CMakeFiles/HarmonyScape.dir/Source/PluginProcessor.cpp.o"
   "CMakeFiles/HarmonyScape.dir/Source/PluginProcessor.cpp.o.d"
+  "CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o"
+  "CMakeFiles/HarmonyScape.dir/Source/RibbonEngine/RibbonEngine.cpp.o.d"
   "CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.o"
   "CMakeFiles/HarmonyScape.dir/Source/SpatialEngine/SpatialEngine.cpp.o.d"
   "HarmonyScape_artefacts/Release/libHarmonyScape_SharedCode.a"
