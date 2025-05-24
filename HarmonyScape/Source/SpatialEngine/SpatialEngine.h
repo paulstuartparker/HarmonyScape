@@ -139,6 +139,7 @@ private:
         
         EnvelopeState envelopeState = EnvelopeState::Idle;
         float envelopeLevel = 0.0f;  // Current envelope level
+        float smoothedEnvelopeLevel = 0.0f;  // Smoothed envelope level for anti-pop
         float filterState = 0.0f;    // Simple one-pole low-pass filter state
         float highpassState = 0.0f;  // High-pass filter state for removing muddiness
         int sampleCounter = 0;       // Count samples since note start for anti-click
@@ -154,6 +155,7 @@ private:
             
             // CRITICAL: Start at exactly 0 for clean attack
             envelopeLevel = 0.0f;
+            smoothedEnvelopeLevel = 0.0f;
             
             // CRITICAL: Reset phase to prevent phase jumps
             phase = 0.0f;
@@ -188,6 +190,7 @@ private:
             active = false;
             envelopeState = EnvelopeState::Idle;
             envelopeLevel = 0.0f;
+            smoothedEnvelopeLevel = 0.0f;
             filterState = 0.0f;
             highpassState = 0.0f;
             sampleCounter = 0;

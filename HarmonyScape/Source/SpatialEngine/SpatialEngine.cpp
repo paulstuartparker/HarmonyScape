@@ -150,12 +150,21 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
                 {
                     int noteNumber = message.getNoteNumber();
                     int chordPosition = activeNotes.indexOf(noteNumber);
-                    voices[static_cast<size_t>(oldestIndex)].trigger(noteNumber, 
-                                              calculatePosition(noteNumber, chordPosition, spatialWidth),
-                                              chordPosition);
-                    voices[static_cast<size_t>(oldestIndex)].envelopeLevel = 0.0f;
-                    voices[static_cast<size_t>(oldestIndex)].active = true;
-                    voices[static_cast<size_t>(oldestIndex)].envelopeState = Voice::EnvelopeState::Attack;
+                    
+                    // ANTI-POP: Gentle voice stealing with crossfade
+                    auto& oldVoice = voices[static_cast<size_t>(oldestIndex)];
+                    if (oldVoice.envelopeLevel > 0.01f)
+                    {
+                        // Force a quick fade-out before stealing
+                        oldVoice.envelopeLevel *= 0.1f;
+                    }
+                    
+                    oldVoice.trigger(noteNumber, 
+                                    calculatePosition(noteNumber, chordPosition, spatialWidth),
+                                    chordPosition);
+                    oldVoice.envelopeLevel = 0.0f;
+                    oldVoice.active = true;
+                    oldVoice.envelopeState = Voice::EnvelopeState::Attack;
                 }
             }
         }
@@ -166,15 +175,26 @@ void SpatialEngine::process(juce::AudioBuffer<float>& buffer, const juce::MidiBu
     {
         int noteNumber = stoppedNotes[i];
         
-        // Release any matching voices
+        // Release any matching voices with smooth transition
         for (auto& voice : voices)
         {
             if (voice.midiNote == noteNumber && voice.envelopeState != Voice::EnvelopeState::Idle)
             {
                 voice.active = false;
+                
+                // ANTI-POP: Ensure smooth release transition
                 if (voice.envelopeState != Voice::EnvelopeState::Release)
                 {
-                    voice.envelopeState = Voice::EnvelopeState::Release;
+                    // If envelope level is very low, go directly to idle to prevent noise
+                    if (voice.envelopeLevel < 0.001f)
+                    {
+                        voice.envelopeState = Voice::EnvelopeState::Idle;
+                        voice.envelopeLevel = 0.0f;
+                    }
+                    else
+                    {
+                        voice.envelopeState = Voice::EnvelopeState::Release;
+                    }
                 }
             }
         }
@@ -277,7 +297,8 @@ void SpatialEngine::processEnvelope(Voice& voice, const ADSRParams& adsr, float&
                 envelopeIncrement = -voice.envelopeLevel; // Immediate release
             }
             
-            if (voice.envelopeLevel <= 0.0f)
+            // ANTI-POP: Ensure we don't go below zero and transition smoothly to idle
+            if (voice.envelopeLevel <= 0.001f)
             {
                 voice.envelopeLevel = 0.0f;
                 voice.envelopeState = Voice::EnvelopeState::Idle;
@@ -381,8 +402,20 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
         }
         voice.sampleCounter++; // Increment sample counter
         
+        // ANTI-POP: Smooth envelope level changes to prevent sudden jumps
+        if (std::abs(voice.envelopeLevel - voice.smoothedEnvelopeLevel) > 0.1f)
+        {
+            // If there's a big jump, smooth it out slightly
+            voice.smoothedEnvelopeLevel = voice.smoothedEnvelopeLevel + 
+                (voice.envelopeLevel - voice.smoothedEnvelopeLevel) * 0.9f;
+        }
+        else
+        {
+            voice.smoothedEnvelopeLevel = voice.envelopeLevel;
+        }
+        
         // Apply envelope and click prevention
-        sample = sample * voice.envelopeLevel * masterVolume * clickPreventionGain;
+        sample = sample * voice.smoothedEnvelopeLevel * masterVolume * clickPreventionGain;
         
         // Dynamic filter that opens with envelope (low-pass)
         float dynamicCutoff = baseCutoff + (voice.envelopeLevel * 0.2f);
