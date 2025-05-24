@@ -141,6 +141,7 @@ private:
         float envelopeLevel = 0.0f;  // Current envelope level
         float filterState = 0.0f;    // Simple one-pole low-pass filter state
         float highpassState = 0.0f;  // High-pass filter state for removing muddiness
+        int sampleCounter = 0;       // Count samples since note start for anti-click
         
         void trigger(int note, float pos, int chordPos = 0) 
         {
@@ -151,14 +152,18 @@ private:
             envelopeState = EnvelopeState::Attack;
             noteStartTime = juce::Time::currentTimeMillis();
             
-            // Start at 0 for proper attack envelope
+            // CRITICAL: Start at exactly 0 for clean attack
             envelopeLevel = 0.0f;
-            // Reset phase for clean start
+            
+            // CRITICAL: Reset phase to prevent phase jumps
             phase = 0.0f;
-            // Reset filter state
+            
+            // Reset filter states to prevent DC offset
             filterState = 0.0f;
-            // Reset high-pass filter state
             highpassState = 0.0f;
+            
+            // Reset sample counter for anti-click
+            sampleCounter = 0;
         }
         
         void release() 
@@ -185,6 +190,7 @@ private:
             envelopeLevel = 0.0f;
             filterState = 0.0f;
             highpassState = 0.0f;
+            sampleCounter = 0;
         }
         
         // Check if this voice has been playing too long (safety feature)

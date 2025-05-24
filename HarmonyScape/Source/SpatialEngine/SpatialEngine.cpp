@@ -350,8 +350,8 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
         // Clamp envelope level to valid range
         voice.envelopeLevel = juce::jlimit(0.0f, 1.0f, voice.envelopeLevel);
         
-        // Skip rendering if envelope is too low
-        if (voice.envelopeLevel < 0.001f)
+        // Skip rendering if envelope is too low (anti-noise threshold)
+        if (voice.envelopeLevel < 0.0001f)
         {
             if (voice.envelopeState == Voice::EnvelopeState::Release)
             {
@@ -370,8 +370,19 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
         // Calculate phase increment with modulation
         float phaseIncrement = frequency / static_cast<float>(sampleRate);
         
-        // Generate sample based on waveform type and apply envelope
-        float sample = generateSample(voice.phase, waveformType) * voice.envelopeLevel * masterVolume;
+        // Generate sample based on waveform type
+        float sample = generateSample(voice.phase, waveformType);
+        
+        // ANTI-CLICK: Simple ramp for the first few samples of any note
+        float clickPreventionGain = 1.0f;
+        if (voice.sampleCounter < 8) // First 8 samples get a tiny ramp
+        {
+            clickPreventionGain = static_cast<float>(voice.sampleCounter) / 8.0f;
+        }
+        voice.sampleCounter++; // Increment sample counter
+        
+        // Apply envelope and click prevention
+        sample = sample * voice.envelopeLevel * masterVolume * clickPreventionGain;
         
         // Dynamic filter that opens with envelope (low-pass)
         float dynamicCutoff = baseCutoff + (voice.envelopeLevel * 0.2f);
@@ -387,8 +398,8 @@ void SpatialEngine::renderVoice(Voice& voice, juce::AudioBuffer<float>& buffer,
         voice.highpassState += (filteredSample - voice.highpassState) * highpassCoeff;
         filteredSample = filteredSample - voice.highpassState;
         
-        // Soft saturation for warmth
-        filteredSample = std::tanh(filteredSample * 0.8f) * 0.95f;
+        // Soft saturation for warmth and to prevent harsh peaks
+        filteredSample = std::tanh(filteredSample * 0.7f) * 0.9f;
         
         // Write to stereo output with panning
         leftBuffer[i] += filteredSample * leftGain;
