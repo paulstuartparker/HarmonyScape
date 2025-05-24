@@ -140,14 +140,26 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Clear output buffer
     buffer.clear();
     
-    // Process MIDI messages through chord engine
+    // Process MIDI messages through chord engine with contextual awareness
     auto chordOutput = chordEngine.processMidi(midiMessages, *chordDensityParam);
     
     // Store the chord output in the spatial engine for visualization
     spatialEngine.setChordOutput(chordOutput);
     
-    // Get current chord notes for ribbon processing
+    // Get current chord notes for ribbon processing (from both user input and generated harmony)
     juce::Array<int> currentChordNotes;
+    
+    // Add user input notes
+    for (const auto metadata : midiMessages)
+    {
+        auto message = metadata.getMessage();
+        if (message.isNoteOn())
+        {
+            currentChordNotes.addIfNotAlreadyThere(message.getNoteNumber());
+        }
+    }
+    
+    // Add generated chord harmony notes
     for (const auto metadata : chordOutput)
     {
         auto message = metadata.getMessage();
@@ -174,25 +186,25 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         ribbonParams.ribbons[i].offset = *this->ribbonParams[i].offset;
         ribbonParams.ribbons[i].intensity = *ribbonIntensityParam;
         ribbonParams.ribbons[i].spatialSpread = *ribbonSpreadParam;
+        ribbonParams.ribbons[i].decay = 0.8f; // Good default for musical decay
     }
     
-    // Process ribbons if enabled
+    // Process ribbons if enabled and we have notes to arpeggiate
     juce::MidiBuffer ribbonMidi;
+    juce::Array<int> activeRibbonNotes; // Track notes for keyboard display
+    
     if (ribbonParams.enableRibbons && !currentChordNotes.isEmpty())
     {
         auto ribbonNotes = ribbonEngine.processChord(currentChordNotes, ribbonParams, 
                                                     buffer.getNumSamples(), 120.0);
         
-        // Convert ribbon notes to MIDI events with proper timing
+        // Convert ribbon notes to MIDI events with sample-accurate timing
         for (const auto& ribbonNote : ribbonNotes)
         {
             if (ribbonNote.active)
             {
-                // Calculate sample position within this buffer based on start time
                 double samplesPerSecond = getSampleRate();
                 double currentTimeInSamples = ribbonEngine.getCurrentTime();
-                
-                // Ribbon note start time relative to current buffer
                 double noteStartSample = ribbonNote.startTime - currentTimeInSamples;
                 
                 // Only add notes that start within this buffer
@@ -200,15 +212,18 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                 {
                     int samplePosition = static_cast<int>(noteStartSample);
                     
-                    // Use higher velocity for ribbon notes to make them audible
-                    float ribbonVelocity = juce::jlimit(0.3f, 1.0f, ribbonNote.velocity * 1.5f);
+                    // Use appropriate velocity for audible arpeggiation
+                    float ribbonVelocity = juce::jlimit(0.4f, 0.9f, ribbonNote.velocity);
                     
                     auto noteOnMsg = juce::MidiMessage::noteOn(1, ribbonNote.midiNote, ribbonVelocity);
                     ribbonMidi.addEvent(noteOnMsg, samplePosition);
                     
-                    // Calculate note duration in samples (make notes shorter and punchier)
-                    double noteDurationSeconds = 0.1 + (ribbonParams.globalRate * 0.2); // 100-300ms depending on rate
-                    int noteDurationSamples = static_cast<int>(noteDurationSeconds * samplesPerSecond);
+                    // Track this note for keyboard visualization
+                    activeRibbonNotes.addIfNotAlreadyThere(ribbonNote.midiNote);
+                    
+                    // Calculate note duration for clean arpeggiation
+                    double noteDurationSeconds = ribbonNote.duration / samplesPerSecond;
+                    int noteDurationSamples = static_cast<int>(ribbonNote.duration);
                     
                     // Schedule note off within buffer if duration allows
                     int noteOffSample = samplePosition + noteDurationSamples;
@@ -225,7 +240,10 @@ void HarmonyScapeAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Advance ribbon engine time
     ribbonEngine.advanceTime(buffer.getNumSamples());
     
-    // Combine all MIDI sources
+    // Store ribbon notes for keyboard visualization
+    spatialEngine.setRibbonNotes(activeRibbonNotes);
+    
+    // Combine all MIDI sources for audio processing
     juce::MidiBuffer combinedMidi;
     
     // Add user input MIDI
@@ -334,6 +352,12 @@ juce::Array<int> HarmonyScapeAudioProcessor::getGeneratedNotes() const
 juce::Array<int> HarmonyScapeAudioProcessor::getReleasingNotes() const
 {
     return releasingNotes;
+}
+
+// Get ribbon notes for keyboard visualization
+juce::Array<int> HarmonyScapeAudioProcessor::getRibbonNotes() const
+{
+    return spatialEngine.getRibbonNotes();
 }
 
 // Update information about which notes are currently audible for visualization

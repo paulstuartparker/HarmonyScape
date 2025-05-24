@@ -108,8 +108,17 @@ public:
      */
     juce::Array<int> getGeneratedNotes() const { return generatedNotes; }
     
+    /**
+     * Get ribbon notes for keyboard visualization
+     * @return Array of MIDI note numbers currently being played by ribbons
+     */
+    juce::Array<int> getRibbonNotes() const { return ribbonNotes; }
+    
     // Store generated chord output for visualization
     void setChordOutput(const juce::MidiBuffer& output) { chordOutput = output; }
+    
+    // Store ribbon notes for visualization
+    void setRibbonNotes(const juce::Array<int>& notes) { ribbonNotes = notes; }
     
 private:
     /**
@@ -250,6 +259,7 @@ private:
     juce::Array<int> userInputNotes;
     juce::Array<int> generatedNotes;
     juce::MidiBuffer chordOutput;  // Store the last chord output for visualization
+    juce::Array<int> ribbonNotes;  // Store ribbon notes for visualization
 
     // LFO state for spatial movement
     struct LFOState

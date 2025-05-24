@@ -57,6 +57,9 @@ public:
     // Get notes that are in release phase but still audible (for keyboard display)
     juce::Array<int> getReleasingNotes() const;
     
+    // Get ribbon notes for keyboard visualization
+    juce::Array<int> getRibbonNotes() const;
+    
     // Update the active voice information from the SpatialEngine
     void updateActiveVoices(const juce::Array<int>& activeVoiceNotes);
 

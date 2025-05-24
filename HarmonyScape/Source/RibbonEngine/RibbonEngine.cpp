@@ -298,42 +298,57 @@ void RibbonEngine::updateRibbonPhase(int ribbonIndex, const RibbonConfig& config
             return;
     }
     
-    // Calculate how fast this ribbon should progress
-    double rateMultiplier = config.rate * 2.0; // 0-2x speed
-    double phaseIncrement = (static_cast<double>(numSamples) / sampleRate) * rateMultiplier;
+    // Calculate arpeggiation timing - each note plays for a specific duration
+    double baseRateHz = 2.0 + config.rate * 6.0;  // 2-8 Hz range for musical arpeggiation
+    double stepDuration = sampleRate / baseRateHz;   // Duration of each step in samples
+    double timeSinceLastNote = currentSamplePosition - state.lastEventTime;
     
-    state.phase += phaseIncrement;
-    
-    // Check if we should trigger new notes
-    int stepsPerCycle = state.sequence.size();
-    if (stepsPerCycle > 0)
+    // Check if it's time for the next note in the arpeggio
+    if (timeSinceLastNote >= stepDuration)
     {
-        double stepPhase = state.phase * stepsPerCycle;
-        int currentStepInPhase = static_cast<int>(stepPhase) % stepsPerCycle;
-        
-        // If we've moved to a new step, schedule a note
-        if (currentStepInPhase != state.currentStep || 
-            (state.phase > state.lastEventTime + 1.0 / stepsPerCycle))
+        int stepsPerCycle = state.sequence.size();
+        if (stepsPerCycle > 0)
         {
-            state.currentStep = currentStepInPhase;
-            state.lastEventTime = state.phase;
+            // Move to next step in the sequence
+            state.currentStep = (state.currentStep + 1) % stepsPerCycle;
+            state.lastEventTime = currentSamplePosition;
             
-            // Create a new ribbon note
+            // Calculate note duration based on arpeggiation speed and ADSR
+            // Note should end just before the next note starts (for clean arpeggiation)
+            double noteDuration = stepDuration * 0.95; // 95% of step duration for slight gap
+            
+            // Create a new ribbon note with ADSR-aware velocity
             RibbonNote newNote;
-            newNote.midiNote = state.sequence[currentStepInPhase];
+            newNote.midiNote = state.sequence[state.currentStep];
             newNote.ribbon = ribbonIndex;
             newNote.startTime = currentSamplePosition;
-            newNote.duration = sampleRate / (4.0 + config.rate * 8.0); // Variable duration
-            newNote.velocity = config.intensity;
+            newNote.duration = noteDuration;
+            newNote.stepIndex = state.currentStep;
+            
+            // Apply intensity and decay for musical expression
+            float baseVelocity = config.intensity;
+            
+            // Add slight decay over the cycle for natural feel
+            float cyclePosition = static_cast<float>(state.currentStep) / stepsPerCycle;
+            float decayFactor = 1.0f - (cyclePosition * (1.0f - config.decay));
+            
+            // Add slight velocity variation for humanization
+            float variation = 1.0f + (std::sin(state.currentStep * 0.7f) * 0.1f); // ±10% variation
+            
+            newNote.velocity = juce::jlimit(0.1f, 1.0f, baseVelocity * decayFactor * variation);
+            
+            // Calculate spatial position for this note in the sequence
             newNote.spatialPosition = calculateRibbonSpatialPosition(
-                currentStepInPhase, stepsPerCycle, config, 0.5f);
+                state.currentStep, stepsPerCycle, config, 0.5f);
+            
             newNote.active = true;
-            newNote.stepIndex = currentStepInPhase;
             
-            // Apply decay based on step position
-            float decayFactor = std::pow(config.decay, currentStepInPhase);
-            newNote.velocity *= decayFactor;
+            // Remove any old notes from this ribbon to ensure only one plays at a time
+            scheduledNotes.removeIf([ribbonIndex](const RibbonNote& note) {
+                return note.ribbon == ribbonIndex;
+            });
             
+            // Add the new note
             scheduledNotes.add(newNote);
         }
     }

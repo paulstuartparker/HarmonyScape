@@ -564,6 +564,7 @@ void HarmonyScapeAudioProcessorEditor::timerCallback()
     
     customKeyboard.setUserNotes(clampNotes(audioProcessor.getUserInputNotes()));
     customKeyboard.setGeneratedNotes(clampNotes(audioProcessor.getGeneratedNotes()));
+    customKeyboard.setRibbonNotes(clampNotes(audioProcessor.getRibbonNotes()));
     
     // Update ADSR visualizer
     float attack = *valueTreeState.getRawParameterValue("attack");

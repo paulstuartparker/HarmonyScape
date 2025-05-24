@@ -16,10 +16,16 @@ void ChordEngine::prepare(double newSampleRate, int newSamplesPerBlock)
 
 juce::MidiBuffer ChordEngine::processMidi(const juce::MidiBuffer& midiMessages, float densityParam)
 {
-    // Track which notes were turned off in this block
-    juce::Array<int> notesOff;
+    juce::MidiBuffer outputBuffer;
     
-    // Process incoming MIDI messages to update active notes
+    // Update current time (this should be called from the processor with actual time)
+    currentTime += static_cast<double>(samplesPerBlock) / sampleRate;
+    
+    // Track new notes pressed and released in this block
+    juce::Array<int> newNotesPressed;
+    juce::Array<int> notesReleased;
+    
+    // Process incoming MIDI messages
     for (const auto metadata : midiMessages)
     {
         auto message = metadata.getMessage();
@@ -27,61 +33,107 @@ juce::MidiBuffer ChordEngine::processMidi(const juce::MidiBuffer& midiMessages, 
         if (message.isNoteOn())
         {
             int noteNumber = message.getNoteNumber();
+            float velocity = message.getFloatVelocity();
+            
+            // Add to active notes if not already there
             if (!activeNotes.contains(noteNumber))
+            {
                 activeNotes.add(noteNumber);
+                newNotesPressed.add(noteNumber);
+                
+                // Add to sustaining notes
+                SustainingNote sustainNote;
+                sustainNote.noteNumber = noteNumber;
+                sustainNote.startTime = currentTime;
+                sustainNote.velocity = velocity;
+                sustainingNotes.add(sustainNote);
+            }
         }
         else if (message.isNoteOff())
         {
             int noteNumber = message.getNoteNumber();
-            notesOff.add(noteNumber);
+            notesReleased.add(noteNumber);
             activeNotes.removeFirstMatchingValue(noteNumber);
+            
+            // Mark as released in sustaining notes (don't remove yet - ADSR needs time)
+            for (auto& sustainNote : sustainingNotes)
+            {
+                if (sustainNote.noteNumber == noteNumber && sustainNote.releaseTime < 0)
+                {
+                    sustainNote.releaseTime = currentTime;
+                    break;
+                }
+            }
         }
     }
     
-    // Generate output MIDI buffer with chord voicing
-    juce::MidiBuffer outputBuffer;
+    // Update harmonic context with ADSR consideration
+    // Assume 2 second max release time for context - this could be made configurable
+    updateHarmonicContext(currentTime, 2.0);
     
-    // If any notes were released or no notes are active, turn off ALL generated notes
-    if (notesOff.size() > 0 || activeNotes.size() == 0)
+    // Get all currently relevant notes (pressed + sustaining)
+    juce::Array<int> contextualNotes = activeNotes;
+    auto sustainingNotesNow = getSustainingNotes();
+    for (int sustainNote : sustainingNotesNow)
     {
-        // Turn off ALL current voicing notes
-        for (int voiceNote : currentVoicing)
+        if (!contextualNotes.contains(sustainNote))
+            contextualNotes.add(sustainNote);
+    }
+    
+    // Generate new voicing based on context
+    juce::Array<int> newVoicing;
+    
+    if (newNotesPressed.size() > 0)
+    {
+        // New notes were pressed - generate contextual harmony
+        if (activeNotes.size() >= 1)
+        {
+            currentChord = detectChord(activeNotes);
+            newVoicing = generateContextualVoicing(currentChord, densityParam);
+        }
+    }
+    else if (activeNotes.size() == 0 && sustainingNotesNow.size() > 0)
+    {
+        // No active notes but we have sustaining notes - maintain some harmony
+        // Use a reduced voicing to let the sustaining notes fade naturally
+        newVoicing = findHarmonicBridge(currentVoicing, sustainingNotesNow);
+        
+        // Gradually reduce the voicing intensity
+        if (newVoicing.size() > 3)
+        {
+            // Remove upper extensions to let it fade
+            newVoicing.removeRange(3, newVoicing.size() - 3);
+        }
+    }
+    else if (activeNotes.size() == 0 && sustainingNotesNow.size() == 0)
+    {
+        // Everything has faded - clear the voicing
+        newVoicing.clear();
+    }
+    else
+    {
+        // Continue with current voicing (no changes needed)
+        newVoicing = currentVoicing;
+    }
+    
+    // Generate MIDI output with smooth transitions
+    // Turn off notes that are no longer in the voicing
+    for (int voiceNote : currentVoicing)
+    {
+        if (!newVoicing.contains(voiceNote))
         {
             outputBuffer.addEvent(juce::MidiMessage::noteOff(1, voiceNote, 0.0f), 0);
         }
-        currentVoicing.clear();
-        currentChord = Chord(); // Reset current chord
-        return outputBuffer; // Return early - no new notes to generate
     }
     
-    // Detect chord from active notes
-    if (activeNotes.size() >= 1)
+    // Turn on new notes in the voicing
+    for (int newNote : newVoicing)
     {
-        currentChord = detectChord(activeNotes);
-    }
-    
-    // Calculate new voicing
-    juce::Array<int> newVoicing;
-    if (!currentChord.isEmpty())
-    {
-        newVoicing = generateVoicing(currentChord, densityParam);
-        
-        // Turn off notes that are no longer in the voicing
-        for (int voiceNote : currentVoicing)
+        if (!currentVoicing.contains(newNote))
         {
-            if (!newVoicing.contains(voiceNote))
-            {
-                outputBuffer.addEvent(juce::MidiMessage::noteOff(1, voiceNote, 0.0f), 0);
-            }
-        }
-        
-        // Turn on new notes in the voicing
-        for (int newNote : newVoicing)
-        {
-            if (!currentVoicing.contains(newNote))
-            {
-                outputBuffer.addEvent(juce::MidiMessage::noteOn(1, newNote, 0.6f), 0);
-            }
+            // Use velocity based on whether this is a new press or sustained context
+            float velocity = newNotesPressed.size() > 0 ? 0.7f : 0.4f; // Softer for sustained context
+            outputBuffer.addEvent(juce::MidiMessage::noteOn(1, newNote, velocity), 0);
         }
     }
     
@@ -415,4 +467,166 @@ juce::Array<int> ChordEngine::generateVoicing(const Chord& chord, float density)
     }
     
     return voicing;
+}
+
+void ChordEngine::updateHarmonicContext(double currentTimeSeconds, double adsrReleaseTime)
+{
+    // Remove old sustaining notes that have fully faded
+    sustainingNotes.removeIf([currentTimeSeconds, adsrReleaseTime](const SustainingNote& note) {
+        return note.releaseTime >= 0 && (currentTimeSeconds - note.releaseTime) > adsrReleaseTime;
+    });
+    
+    // Update harmonic field with recently active notes
+    harmonicContext.harmonicField.clear();
+    
+    // Add currently active notes
+    for (int note : activeNotes)
+        harmonicContext.harmonicField.addIfNotAlreadyThere(note);
+    
+    // Add sustaining notes
+    for (const auto& sustainNote : sustainingNotes)
+        harmonicContext.harmonicField.addIfNotAlreadyThere(sustainNote.noteNumber);
+    
+    // Update recent root notes for tonal gravity
+    if (!currentChord.isEmpty())
+    {
+        int root = currentChord.rootNote % 12; // Get pitch class
+        harmonicContext.recentRootNotes.addIfNotAlreadyThere(root);
+        
+        // Keep only the last 5 root notes for context
+        if (harmonicContext.recentRootNotes.size() > 5)
+            harmonicContext.recentRootNotes.removeRange(0, harmonicContext.recentRootNotes.size() - 5);
+    }
+    
+    harmonicContext.lastUpdateTime = currentTimeSeconds;
+}
+
+juce::Array<int> ChordEngine::getSustainingNotes() const
+{
+    juce::Array<int> sustainingNoteNumbers;
+    
+    for (const auto& sustainNote : sustainingNotes)
+    {
+        // Include notes that are either still held or recently released (still in ADSR release)
+        if (sustainNote.releaseTime < 0 || (currentTime - sustainNote.releaseTime) < 1.0) // 1 second release consideration
+        {
+            sustainingNoteNumbers.add(sustainNote.noteNumber);
+        }
+    }
+    
+    return sustainingNoteNumbers;
+}
+
+juce::Array<int> ChordEngine::generateContextualVoicing(const Chord& newChord, float density)
+{
+    if (newChord.isEmpty())
+        return {};
+    
+    // Start with the basic voicing
+    juce::Array<int> voicing = generateVoicing(newChord, density);
+    
+    // Apply tonal gravity - prefer notes that connect to recent harmonic context
+    if (!harmonicContext.harmonicField.isEmpty() && !harmonicContext.recentRootNotes.isEmpty())
+    {
+        // Find common tones between new chord and harmonic context
+        juce::Array<int> commonTones;
+        for (int note : newChord.notes)
+        {
+            int pitchClass = note % 12;
+            for (int contextNote : harmonicContext.harmonicField)
+            {
+                if ((contextNote % 12) == pitchClass)
+                {
+                    commonTones.addIfNotAlreadyThere(note);
+                    break;
+                }
+            }
+        }
+        
+        // If we have common tones, enhance them in the voicing
+        if (!commonTones.isEmpty())
+        {
+            for (int commonTone : commonTones)
+            {
+                // Add octave doublings of common tones for continuity
+                if (commonTone + 12 < 108 && !voicing.contains(commonTone + 12))
+                    voicing.add(commonTone + 12);
+                    
+                if (commonTone - 12 > 24 && !voicing.contains(commonTone - 12))
+                    voicing.add(commonTone - 12);
+            }
+        }
+        
+        // Apply harmonic bridge for smoother transitions
+        if (!currentVoicing.isEmpty())
+        {
+            auto bridgeNotes = findHarmonicBridge(currentVoicing, voicing);
+            for (int bridgeNote : bridgeNotes)
+            {
+                if (!voicing.contains(bridgeNote))
+                    voicing.add(bridgeNote);
+            }
+        }
+    }
+    
+    return voicing;
+}
+
+juce::Array<int> ChordEngine::findHarmonicBridge(const juce::Array<int>& currentHarmony, const juce::Array<int>& newNotes)
+{
+    juce::Array<int> bridgeNotes;
+    
+    if (currentHarmony.isEmpty() || newNotes.isEmpty())
+        return bridgeNotes;
+    
+    // Find notes that can serve as harmonic bridges (common pitch classes, close intervals)
+    for (int currentNote : currentHarmony)
+    {
+        int currentPitchClass = currentNote % 12;
+        
+        // Look for direct common tones
+        for (int newNote : newNotes)
+        {
+            int newPitchClass = newNote % 12;
+            
+            if (currentPitchClass == newPitchClass)
+            {
+                // Direct common tone - keep the current note
+                bridgeNotes.addIfNotAlreadyThere(currentNote);
+                break;
+            }
+        }
+        
+        // Look for notes that are a semitone away (smooth voice leading)
+        for (int newNote : newNotes)
+        {
+            int interval = std::abs(currentNote - newNote);
+            if (interval == 1 || interval == 2) // Semitone or whole tone
+            {
+                // Small interval - good for voice leading
+                bridgeNotes.addIfNotAlreadyThere(currentNote);
+                break;
+            }
+        }
+    }
+    
+    // If no direct connections, find the closest notes for smooth voice leading
+    if (bridgeNotes.isEmpty() && !currentHarmony.isEmpty())
+    {
+        // Take the most central note from current harmony as a bridge
+        auto sortedCurrent = currentHarmony;
+        sortedCurrent.sort();
+        
+        if (sortedCurrent.size() >= 3)
+        {
+            int middleNote = sortedCurrent[sortedCurrent.size() / 2];
+            bridgeNotes.add(middleNote);
+        }
+        else if (sortedCurrent.size() > 0)
+        {
+            bridgeNotes.add(sortedCurrent[0]);
+        }
+    }
+    
+    return bridgeNotes;
 } 

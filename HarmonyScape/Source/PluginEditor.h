@@ -161,15 +161,23 @@ private:
             repaint();
         }
         
+        void setRibbonNotes(const juce::Array<int>& notes) 
+        { 
+            ribbonNotesList = notes; 
+            repaint();
+        }
+        
     protected:
         void drawWhiteNote(int midiNoteNumber, juce::Graphics& g, juce::Rectangle<float> area, 
                            bool isDown, bool isOver, juce::Colour lineColour, juce::Colour textColour) override
         {
-            // Choose color based on whether this is a user note or generated note
+            // Choose color based on note type priority: user > ribbon > generated
             juce::Colour fillColor = juce::Colours::white;
             
             if (isUserNote(midiNoteNumber))
                 fillColor = juce::Colours::blue.withAlpha(0.7f);
+            else if (isRibbonNote(midiNoteNumber))
+                fillColor = juce::Colours::orange.withAlpha(0.7f);
             else if (isGeneratedNote(midiNoteNumber))
                 fillColor = juce::Colours::green.withAlpha(0.7f);
             else if (isDown)
@@ -185,11 +193,13 @@ private:
         void drawBlackNote(int midiNoteNumber, juce::Graphics& g, juce::Rectangle<float> area, 
                           bool isDown, bool isOver, juce::Colour noteFillColour) override
         {
-            // Choose color based on whether this is a user note or generated note
+            // Choose color based on note type priority: user > ribbon > generated
             juce::Colour fillColor = noteFillColour;
             
             if (isUserNote(midiNoteNumber))
                 fillColor = juce::Colours::blue.withAlpha(0.7f);
+            else if (isRibbonNote(midiNoteNumber))
+                fillColor = juce::Colours::orange.withAlpha(0.7f);
             else if (isGeneratedNote(midiNoteNumber))
                 fillColor = juce::Colours::green.withAlpha(0.7f);
             else if (isDown)
@@ -213,8 +223,14 @@ private:
             return generatedNotesList.contains(midiNoteNumber) && !userNotesList.contains(midiNoteNumber);
         }
         
+        bool isRibbonNote(int midiNoteNumber) const
+        {
+            return ribbonNotesList.contains(midiNoteNumber);
+        }
+        
         juce::Array<int> userNotesList;
         juce::Array<int> generatedNotesList;
+        juce::Array<int> ribbonNotesList;
     };
     
     // Implement custom keyboard to show colored keys
